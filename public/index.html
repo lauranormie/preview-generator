@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Preview Generator - Supernormal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 15px;
+            font-weight: 800;
+            text-shadow: 2px 2px 20px rgba(0,0,0,0.2);
+        }
+
+        .subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            padding: 18px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            box-shadow: none;
+            margin-top: 15px;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e0e0e0;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid rgba(102, 126, 234, 0.2);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 16px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .result {
+            display: none;
+        }
+
+        .result.active {
+            display: block;
+        }
+
+        .preview-container {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .preview-img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .error {
+            display: none;
+            background: #ff4444;
+            color: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .example {
+            background: #f0f7ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .example code {
+            background: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+            font-size: 12px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            opacity: 0.9;
+        }
+
+        .footer p {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Social Preview Generator</h1>
+            <p class="subtitle">Paste a Supernormal template URL and generate a social preview image automatically</p>
+        </div>
+
+        <div class="card">
+            <form id="generateForm">
+                <div class="input-group">
+                    <label for="templateUrl">Template URL</label>
+                    <input
+                        type="text"
+                        id="templateUrl"
+                        placeholder="https://app.supernormal.com/share/..."
+                        required
+                    >
+                    <div class="example">
+                        <strong>Example:</strong> <code>https://app.supernormal.com/share/34ab5788-d7d9-43a7-9a12-5b965cc499c2/embed</code>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="heroSlide">Hero Slide (centered)</label>
+                    <select id="heroSlide">
+                        <option value="0">Slide 1 (First)</option>
+                        <option value="1">Slide 2</option>
+                        <option value="2">Slide 3</option>
+                        <option value="3">Slide 4</option>
+                        <option value="4">Slide 5</option>
+                        <option value="5">Slide 6</option>
+                        <option value="6">Slide 7</option>
+                        <option value="7">Slide 8</option>
+                        <option value="8">Slide 9</option>
+                        <option value="9">Slide 10</option>
+                        <option value="10">Slide 11</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn" id="generateBtn">
+                    ✨ Generate Social Preview
+                </button>
+            </form>
+
+            <div class="error" id="error"></div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div class="loading-text">Capturing slides and generating preview...</div>
+                <div style="margin-top: 15px; font-size: 14px; color: #888;">This takes about 15-20 seconds</div>
+            </div>
+
+            <div class="result" id="result">
+                <div class="stats" id="stats">
+                    <div class="stat">
+                        <div class="stat-value" id="totalSlides">0</div>
+                        <div class="stat-label">Total Slides</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="lightCount">0</div>
+                        <div class="stat-label">Light Backgrounds</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="darkCount">0</div>
+                        <div class="stat-label">Dark Backgrounds</div>
+                    </div>
+                </div>
+
+                <div class="preview-container">
+                    <img id="previewImg" class="preview-img" alt="Generated social preview">
+                </div>
+
+                <button class="btn btn-secondary" id="downloadBtn">
+                    📥 Download JPEG
+                </button>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Created for Supernormal • Replicates Lucian's manual Figma workflow</p>
+            <p style="margin-top: 10px; opacity: 0.7;">Saves 99% of time, 99.9% of cost</p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('generateForm');
+        const generateBtn = document.getElementById('generateBtn');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        const error = document.getElementById('error');
+        const previewImg = document.getElementById('previewImg');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const templateUrl = document.getElementById('templateUrl').value;
+            const heroSlide = parseInt(document.getElementById('heroSlide').value);
+
+            // Reset UI
+            error.classList.remove('active');
+            result.classList.remove('active');
+            loading.classList.add('active');
+            generateBtn.disabled = true;
+
+            try {
+                const response = await fetch('http://localhost:3456/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ templateUrl, heroSlide }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to generate preview');
+                }
+
+                // Show result
+                previewImg.src = data.preview;
+                document.getElementById('totalSlides').textContent = data.stats.totalSlides;
+                document.getElementById('lightCount').textContent = data.stats.lightCount;
+                document.getElementById('darkCount').textContent = data.stats.darkCount;
+
+                loading.classList.remove('active');
+                result.classList.add('active');
+
+            } catch (err) {
+                console.error(err);
+                error.textContent = `Error: ${err.message}`;
+                error.classList.add('active');
+                loading.classList.remove('active');
+            } finally {
+                generateBtn.disabled = false;
+            }
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'social-preview.jpg';
+            link.href = previewImg.src;
+            link.click();
+        });
+    </script>
+</body>
+</html>

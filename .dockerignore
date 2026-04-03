@@ -1,0 +1,15 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+README.md
+.DS_Store
+*.png
+*.jpg
+*.jpeg
+test-*.js
+measure-*.js
+check-*.js
+inspect-*.js
+find-*.js
+generate-social-preview-poc.py

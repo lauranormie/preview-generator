@@ -1,0 +1,20 @@
+node_modules/
+npm-debug.log
+.DS_Store
+*.png
+*.jpg
+*.jpeg
+*.json
+!package.json
+!package-lock.json
+!railway.json
+
+# Test scripts
+test-*.js
+measure-*.js
+check-*.js
+inspect-*.js
+find-*.js
+
+# Python POC
+*.py
