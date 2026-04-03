@@ -267,6 +267,24 @@
                 </div>
 
                 <div class="input-group">
+                    <label for="templateType">Template Type</label>
+                    <select id="templateType">
+                        <option value="slides">Slides</option>
+                        <option value="docs">Docs</option>
+                        <option value="spreadsheets">Spreadsheets</option>
+                        <option value="images">Images</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="designStyle">Design Style</label>
+                    <select id="designStyle">
+                        <option value="black-isometric">Black Isometric</option>
+                        <option value="white-gradient">White Gradient</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
                     <label for="heroSlide">Hero Slide (centered)</label>
                     <select id="heroSlide">
                         <option value="0">Slide 1 (First)</option>
@@ -341,6 +359,8 @@
             e.preventDefault();
 
             const templateUrl = document.getElementById('templateUrl').value;
+            const templateType = document.getElementById('templateType').value;
+            const designStyle = document.getElementById('designStyle').value;
             const heroSlide = parseInt(document.getElementById('heroSlide').value);
 
             // Reset UI
@@ -350,12 +370,12 @@
             generateBtn.disabled = true;
 
             try {
-                const response = await fetch('http://localhost:3456/api/generate', {
+                const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ templateUrl, heroSlide }),
+                    body: JSON.stringify({ templateUrl, templateType, designStyle, heroSlide }),
                 });
 
                 const data = await response.json();

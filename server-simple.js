@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-async function captureAndGenerate(templateUrl, heroSlide = 0) {
+async function captureAndGenerate(templateUrl, heroSlide = 0, templateType = 'slides', designStyle = 'black-isometric') {
     console.log('🚀 Launching browser...');
     const browser = await puppeteer.launch({
         headless: true,
@@ -112,7 +112,7 @@ async function captureAndGenerate(templateUrl, heroSlide = 0) {
     console.log('🎨 Generating preview in browser...');
 
     // Generate preview in browser
-    const previewBase64 = await page.evaluate(async (slidesData, heroIdx) => {
+    const previewBase64 = await page.evaluate(async (slidesData, heroIdx, style) => {
         // Balance slides
         function balanceSlides(slides) {
             const light = slides.filter(s => s.brightness === 'light');
@@ -147,15 +147,29 @@ async function captureAndGenerate(templateUrl, heroSlide = 0) {
         canvas.height = 630;
         const ctx = canvas.getContext('2d');
 
-        // Black background
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, 1200, 630);
-
         // Isometric stack settings
         const tileWidth = 180;
         const tileHeight = 101;
         const spacing = 15;
-        const rotation = -15;
+
+        // Style-specific settings
+        const styleConfig = style === 'white-gradient' ? {
+            bgColor: '#fff',
+            rotation: 10.17,
+            skew: -34.7,
+            gradientColors: ['rgba(255, 255, 255, 1)', 'rgba(255, 255, 255, 0)']
+        } : {
+            bgColor: '#000',
+            rotation: -15,
+            skew: 0,
+            gradientColors: ['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 0.9)']
+        };
+
+        // Background
+        ctx.fillStyle = styleConfig.bgColor;
+        ctx.fillRect(0, 0, 1200, 630);
+
+        const rotation = styleConfig.rotation;
 
         ctx.save();
         ctx.translate(600, 315);
@@ -186,9 +200,14 @@ async function captureAndGenerate(templateUrl, heroSlide = 0) {
 
         // Apply gradient fade
         const gradient = ctx.createRadialGradient(600, 315, 0, 600, 315, 720);
-        gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-        gradient.addColorStop(0.6, 'rgba(0, 0, 0, 0.3)');
-        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)');
+        if (style === 'white-gradient') {
+            gradient.addColorStop(0.3, styleConfig.gradientColors[1]);
+            gradient.addColorStop(1, styleConfig.gradientColors[0]);
+        } else {
+            gradient.addColorStop(0, styleConfig.gradientColors[0]);
+            gradient.addColorStop(0.6, styleConfig.gradientColors[1]);
+            gradient.addColorStop(1, styleConfig.gradientColors[2]);
+        }
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, 1200, 630);
 
@@ -208,7 +227,7 @@ async function captureAndGenerate(templateUrl, heroSlide = 0) {
 
         // Return as base64
         return canvas.toDataURL('image/jpeg', 0.95);
-    }, slides, heroSlide);
+    }, slides, heroSlide, designStyle);
 
     await browser.close();
 
@@ -223,7 +242,12 @@ async function captureAndGenerate(templateUrl, heroSlide = 0) {
 // API endpoint
 app.post('/api/generate', async (req, res) => {
     try {
-        const { templateUrl, heroSlide = 0 } = req.body;
+        const {
+            templateUrl,
+            heroSlide = 0,
+            templateType = 'slides',
+            designStyle = 'black-isometric'
+        } = req.body;
 
         if (!templateUrl) {
             return res.status(400).json({ error: 'Template URL is required' });
@@ -231,10 +255,12 @@ app.post('/api/generate', async (req, res) => {
 
         console.log('\n🎬 Starting generation...');
         console.log('   URL:', templateUrl);
+        console.log('   Template type:', templateType);
+        console.log('   Design style:', designStyle);
         console.log('   Hero slide:', heroSlide + 1);
         console.log('');
 
-        const result = await captureAndGenerate(templateUrl, heroSlide);
+        const result = await captureAndGenerate(templateUrl, heroSlide, templateType, designStyle);
 
         const lightCount = result.slides.filter(s => s.brightness === 'light').length;
         const darkCount = result.slides.filter(s => s.brightness === 'dark').length;
