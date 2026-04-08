@@ -172,9 +172,9 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
         ctx.fillRect(0, 0, 1200, 630);
 
         // Diagonal perspective repeating grid layout (matching Figma design)
-        const tileWidth = 220;
-        const tileHeight = 124;
-        const spacing = 20;
+        const tileWidth = 280; // Increased from 220 for better quality
+        const tileHeight = 158; // Increased proportionally
+        const spacing = 22;
         const gridRotation = -25; // Overall grid rotation
 
         ctx.save();
@@ -182,8 +182,8 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
         ctx.rotate((gridRotation * Math.PI) / 180);
 
         // Create repeating diagonal grid
-        const cols = 7; // Number of columns
-        const rows = 5; // Number of rows
+        const cols = 6; // Reduced from 7 to fit larger tiles
+        const rows = 4; // Reduced from 5 to fit larger tiles
 
         let slideIdx = 0;
         for (let row = 0; row < rows; row++) {
@@ -201,8 +201,12 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
 
                 ctx.save();
                 ctx.translate(x + tileWidth / 2, y + tileHeight / 2);
-                ctx.rotate((Math.random() * 6 - 3) * Math.PI / 180); // Slight random variation
+                // Removed random rotation for cleaner look
                 ctx.globalAlpha = 0.55;
+
+                // Use higher quality image scaling
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
 
                 ctx.drawImage(
                     balancedSlides[slideIdx].img,
