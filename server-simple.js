@@ -170,36 +170,53 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
         }
         ctx.fillRect(0, 0, 1200, 630);
 
-        // Diagonal perspective layout
-        const slidePositions = [
-            { x: -150, y: 100, rotation: -25, scale: 0.35, z: 1 },
-            { x: 50, y: 50, rotation: -20, scale: 0.4, z: 2 },
-            { x: 200, y: 150, rotation: -30, scale: 0.38, z: 1 },
-            { x: -100, y: 300, rotation: -22, scale: 0.36, z: 1 },
-            { x: 100, y: 350, rotation: -28, scale: 0.42, z: 2 },
-            { x: 900, y: 80, rotation: -18, scale: 0.37, z: 1 },
-            { x: 1050, y: 150, rotation: -24, scale: 0.39, z: 2 },
-            { x: 850, y: 250, rotation: -26, scale: 0.36, z: 1 },
-            { x: 950, y: 400, rotation: -20, scale: 0.4, z: 2 },
-            { x: 1100, y: 450, rotation: -29, scale: 0.38, z: 1 }
-        ];
+        // Diagonal perspective repeating grid layout (matching Figma design)
+        const tileWidth = 220;
+        const tileHeight = 124;
+        const spacing = 20;
+        const gridRotation = -25; // Overall grid rotation
 
-        // Draw background slides
-        balancedSlides.slice(0, 10).forEach((slide, i) => {
-            if (i >= slidePositions.length) return;
-            const pos = slidePositions[i];
+        ctx.save();
+        ctx.translate(600, 315);
+        ctx.rotate((gridRotation * Math.PI) / 180);
 
-            ctx.save();
-            ctx.translate(pos.x, pos.y);
-            ctx.rotate((pos.rotation * Math.PI) / 180);
-            ctx.globalAlpha = 0.6;
+        // Create repeating diagonal grid
+        const cols = 7; // Number of columns
+        const rows = 5; // Number of rows
 
-            const width = 400 * pos.scale;
-            const height = (slide.img.height / slide.img.width) * width;
+        let slideIdx = 0;
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                if (slideIdx >= balancedSlides.length) slideIdx = 0;
 
-            ctx.drawImage(slide.img, 0, 0, width, height);
-            ctx.restore();
-        });
+                // Calculate position with offset for odd rows
+                let x = col * (tileWidth + spacing) - ((cols * (tileWidth + spacing)) / 2);
+                let y = row * (tileHeight + spacing) - ((rows * (tileHeight + spacing)) / 2);
+
+                // Offset odd rows to create diagonal pattern
+                if (row % 2 === 1) {
+                    x += (tileWidth + spacing) / 2;
+                }
+
+                ctx.save();
+                ctx.translate(x + tileWidth / 2, y + tileHeight / 2);
+                ctx.rotate((Math.random() * 6 - 3) * Math.PI / 180); // Slight random variation
+                ctx.globalAlpha = 0.55;
+
+                ctx.drawImage(
+                    balancedSlides[slideIdx].img,
+                    -tileWidth / 2,
+                    -tileHeight / 2,
+                    tileWidth,
+                    tileHeight
+                );
+
+                ctx.restore();
+                slideIdx++;
+            }
+        }
+
+        ctx.restore();
 
         // Add hero image with rounded corners and shadow
         const heroSlide = loadedSlides[heroIdx].img;
