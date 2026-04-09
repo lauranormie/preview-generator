@@ -17,7 +17,7 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
     console.log('🚀 Launching browser...');
     const browser = await puppeteer.launch({
         headless: true,
-        protocolTimeout: 180000, // 3 minutes (increased from default 30s)
+        protocolTimeout: 300000, // 5 minutes (increased from 3 minutes)
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -34,16 +34,16 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
     await page.setViewport({ width: 1440, height: 900 });
 
     console.log('📂 Loading template:', templateUrl);
-    await page.goto(templateUrl, { waitUntil: 'domcontentloaded', timeout: 90000 });
+    await page.goto(templateUrl, { waitUntil: 'domcontentloaded', timeout: 120000 }); // Increased to 2 minutes
 
     console.log('⏳ Waiting for React app to render...');
     // Wait for the loading spinner to disappear and content to appear
     await page.waitForFunction(
         () => !document.querySelector('.lucide-loader-circle') && document.querySelectorAll('button').length > 0,
-        { timeout: 60000 }
+        { timeout: 120000 } // Increased to 2 minutes
     );
 
-    await wait(5000); // Extra time for all slides to fully load
+    await wait(8000); // Extra time for all slides to fully load (increased from 5s)
 
     // Capture all slides
     const slides = [];
@@ -62,7 +62,7 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
             }
         }, i);
 
-        await wait(1000); // Increased wait time for slide to fully render
+        await wait(1500); // Wait for slide to fully render
 
         // Take screenshot
         const screenshot = await page.screenshot({
