@@ -8,6 +8,7 @@ npm-debug.log
 !package.json
 !package-lock.json
 !railway.json
+!vercel.json
 
 # Test scripts
 test-*.js
