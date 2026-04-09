@@ -243,26 +243,36 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
         const heroY = (630 - heroHeight) / 2;
         const borderRadius = 20;
 
+        // Helper function to create rounded rectangle path
+        function roundRect(ctx, x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        // Draw shadow first (separate from the actual image)
         ctx.save();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-        ctx.shadowBlur = 50;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+        ctx.shadowBlur = 40;
         ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 25;
+        ctx.shadowOffsetY = 20;
+        roundRect(ctx, heroX, heroY, heroWidth, heroHeight, borderRadius);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; // Invisible fill just to cast shadow
+        ctx.fill();
+        ctx.restore();
 
-        // Draw rounded rectangle path for clipping
-        ctx.beginPath();
-        ctx.moveTo(heroX + borderRadius, heroY);
-        ctx.lineTo(heroX + heroWidth - borderRadius, heroY);
-        ctx.quadraticCurveTo(heroX + heroWidth, heroY, heroX + heroWidth, heroY + borderRadius);
-        ctx.lineTo(heroX + heroWidth, heroY + heroHeight - borderRadius);
-        ctx.quadraticCurveTo(heroX + heroWidth, heroY + heroHeight, heroX + heroWidth - borderRadius, heroY + heroHeight);
-        ctx.lineTo(heroX + borderRadius, heroY + heroHeight);
-        ctx.quadraticCurveTo(heroX, heroY + heroHeight, heroX, heroY + heroHeight - borderRadius);
-        ctx.lineTo(heroX, heroY + borderRadius);
-        ctx.quadraticCurveTo(heroX, heroY, heroX + borderRadius, heroY);
-        ctx.closePath();
+        // Now draw the image with rounded corners (no shadow)
+        ctx.save();
+        roundRect(ctx, heroX, heroY, heroWidth, heroHeight, borderRadius);
         ctx.clip();
-
         ctx.drawImage(heroSlide, heroX, heroY, heroWidth, heroHeight);
         ctx.restore();
 
