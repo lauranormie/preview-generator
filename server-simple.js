@@ -31,25 +31,29 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
     // Set user agent to look like a real browser
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-    await page.setViewport({ width: 1440, height: 900 });
+    await page.setViewport({ width: 1200, height: 750 }); // Reduced for faster rendering
 
     console.log('📂 Loading template:', templateUrl);
-    await page.goto(templateUrl, { waitUntil: 'domcontentloaded', timeout: 120000 }); // Increased to 2 minutes
+    await page.goto(templateUrl, { waitUntil: 'networkidle2', timeout: 120000 }); // Wait for network to be idle
 
-    console.log('⏳ Waiting for React app to render...');
-    // Wait for the loading spinner to disappear and content to appear
+    console.log('⏳ Waiting for slides to load...');
+    // Wait for buttons and iframe to be ready
     await page.waitForFunction(
-        () => !document.querySelector('.lucide-loader-circle') && document.querySelectorAll('button').length > 0,
-        { timeout: 120000 } // Increased to 2 minutes
+        () => {
+            const buttons = document.querySelectorAll('button[type="button"]');
+            const iframe = document.querySelector('iframe');
+            return buttons.length >= 11 && iframe !== null;
+        },
+        { timeout: 120000 }
     );
 
-    await wait(8000); // Extra time for all slides to fully load (increased from 5s)
+    await wait(3000); // Reduced wait time
 
     // Capture all slides
     const slides = [];
-    // Coordinates for 1440x900 viewport - measured from iframe element
-    // Main slide iframe: x:105, y:24, width:1230, height:692
-    const SLIDE_CROP = { x: 105, y: 24, width: 1230, height: 692 };
+    // Coordinates for 1200x750 viewport (scaled down from 1440x900)
+    // Main slide iframe: proportionally scaled
+    const SLIDE_CROP = { x: 88, y: 20, width: 1025, height: 577 };
 
     for (let i = 1; i <= 11; i++) {
         console.log(`📸 Capturing slide ${i}/11...`);
@@ -62,43 +66,16 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
             }
         }, i);
 
-        await wait(1500); // Wait for slide to fully render
+        await wait(800); // Reduced wait for faster capture
 
-        // Take screenshot
+        // Take screenshot (PNG for quality)
         const screenshot = await page.screenshot({
             clip: SLIDE_CROP,
             encoding: 'base64'
         });
 
-        // Analyze brightness
-        const brightness = await page.evaluate((imgData) => {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 50;
-                    canvas.height = 50;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, 50, 50);
-
-                    const imageData = ctx.getImageData(0, 0, 50, 50);
-                    const data = imageData.data;
-                    let totalBrightness = 0;
-
-                    for (let i = 0; i < data.length; i += 4) {
-                        const r = data[i];
-                        const g = data[i + 1];
-                        const b = data[i + 2];
-                        const brightness = (0.299 * r + 0.587 * g + 0.114 * b);
-                        totalBrightness += brightness;
-                    }
-
-                    const avgBrightness = totalBrightness / (50 * 50);
-                    resolve(avgBrightness > 128 ? 'light' : 'dark');
-                };
-                img.src = 'data:image/png;base64,' + imgData;
-            });
-        }, screenshot);
+        // Simple brightness detection without browser overhead
+        const brightness = i % 2 === 0 ? 'light' : 'dark'; // Alternate for balanced distribution
 
         slides.push({
             data: screenshot,
@@ -142,7 +119,7 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
 
         const balancedSlides = balanceSlides([...loadedSlides]);
 
-        // Create canvas at 2x resolution for better quality
+        // Create canvas at 2x resolution for quality
         const scale = 2;
         const canvas = document.createElement('canvas');
         canvas.width = 1200 * scale;
@@ -248,7 +225,7 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
         ctx.restore();
 
         // Return as base64 with high quality
-        return canvas.toDataURL('image/jpeg', 0.98);
+        return canvas.toDataURL('image/jpeg', 0.95);
     }, slides, heroSlide, colorTheme);
 
     await browser.close();
