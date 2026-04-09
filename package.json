@@ -11,8 +11,8 @@
   "author": "Laura James",
   "license": "MIT",
   "dependencies": {
-    "chrome-aws-lambda": "^10.1.0",
-    "puppeteer-core": "^10.1.0"
+    "@sparticuz/chromium": "^143.0.4",
+    "puppeteer-core": "^23.11.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

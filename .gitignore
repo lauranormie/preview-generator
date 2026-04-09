@@ -18,3 +18,4 @@ find-*.js
 
 # Python POC
 *.py
+.vercel

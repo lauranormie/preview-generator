@@ -1,4 +1,4 @@
-const chrome = require('chrome-aws-lambda');
+const chromium = require('@sparticuz/chromium');
 const puppeteer = require('puppeteer-core');
 
 // Helper function to wait
@@ -8,9 +8,10 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
     console.log('🚀 Launching browser...');
 
     const browser = await puppeteer.launch({
-        args: chrome.args,
-        executablePath: await chrome.executablePath,
-        headless: chrome.headless,
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
     });
 
     const page = await browser.newPage();
