@@ -8,10 +8,19 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
     console.log('🚀 Launching browser...');
 
     const browser = await puppeteer.launch({
-        args: chromium.args,
+        args: [
+            ...chromium.args,
+            '--disable-dev-shm-usage',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu',
+            '--disable-web-security',
+            '--disable-features=IsolateOrigins,site-per-process'
+        ],
         defaultViewport: chromium.defaultViewport,
         executablePath: await chromium.executablePath(),
         headless: chromium.headless,
+        ignoreHTTPSErrors: true,
     });
 
     const page = await browser.newPage();
@@ -35,7 +44,10 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
         { timeout: 90000 }
     );
 
-    await wait(1500);
+    await wait(2000); // Increased for stability
+
+    // Ensure page is ready
+    await page.evaluate(() => document.readyState);
 
     // Capture all slides
     const slides = [];
@@ -43,6 +55,11 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
 
     for (let i = 1; i <= 11; i++) {
         console.log(`📸 Capturing slide ${i}/11...`);
+
+        // Check if page is still alive
+        if (page.isClosed()) {
+            throw new Error('Page was closed unexpectedly');
+        }
 
         // Navigate to slide
         await page.evaluate((slideNum) => {
@@ -52,13 +69,23 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
             }
         }, i);
 
-        await wait(400);
+        await wait(600); // Slightly longer wait for stability
 
-        // Take screenshot (PNG for quality)
-        const screenshot = await page.screenshot({
-            clip: SLIDE_CROP,
-            encoding: 'base64'
-        });
+        // Take screenshot (PNG for quality) with retry logic
+        let screenshot;
+        try {
+            screenshot = await page.screenshot({
+                clip: SLIDE_CROP,
+                encoding: 'base64'
+            });
+        } catch (screenshotError) {
+            console.log(`   ⚠️  Screenshot failed, retrying after 1s...`);
+            await wait(1000);
+            screenshot = await page.screenshot({
+                clip: SLIDE_CROP,
+                encoding: 'base64'
+            });
+        }
 
         // Simple brightness detection without browser overhead
         const brightness = i % 2 === 0 ? 'light' : 'dark';
