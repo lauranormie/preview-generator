@@ -44,7 +44,23 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
         { timeout: 90000 }
     );
 
-    await wait(2000); // Increased for stability
+    console.log('⏳ Ensuring iframe is fully loaded and stable...');
+    // Wait for iframe to be fully loaded
+    await page.waitForFunction(
+        () => {
+            const iframe = document.querySelector('iframe');
+            if (!iframe) return false;
+            try {
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                return iframeDoc && iframeDoc.readyState === 'complete';
+            } catch (e) {
+                return false;
+            }
+        },
+        { timeout: 90000 }
+    );
+
+    await wait(3000); // Extra time for iframe to stabilize
 
     // Ensure page is ready
     await page.evaluate(() => document.readyState);
@@ -61,6 +77,23 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
             throw new Error('Page was closed unexpectedly');
         }
 
+        // Verify iframe is still attached and loaded
+        const iframeStable = await page.evaluate(() => {
+            const iframe = document.querySelector('iframe');
+            if (!iframe) return false;
+            try {
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                return iframeDoc && iframeDoc.readyState === 'complete';
+            } catch (e) {
+                return false;
+            }
+        });
+
+        if (!iframeStable) {
+            console.log(`   ⚠️  Iframe unstable, waiting 2s...`);
+            await wait(2000);
+        }
+
         // Navigate to slide
         await page.evaluate((slideNum) => {
             const buttons = document.querySelectorAll('button[type="button"]');
@@ -69,7 +102,7 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
             }
         }, i);
 
-        await wait(600); // Slightly longer wait for stability
+        await wait(800); // Wait for slide transition
 
         // Take screenshot (PNG for quality) with retry logic
         let screenshot;
