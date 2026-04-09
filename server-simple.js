@@ -142,33 +142,26 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
 
         const balancedSlides = balanceSlides([...loadedSlides]);
 
-        // Create canvas
+        // Create canvas at 2x resolution for better quality
+        const scale = 2;
         const canvas = document.createElement('canvas');
-        canvas.width = 1200;
-        canvas.height = 630;
+        canvas.width = 1200 * scale;
+        canvas.height = 630 * scale;
         const ctx = canvas.getContext('2d');
+        ctx.scale(scale, scale);
 
         // Color theme configuration
         const themeConfig = {
             'black': { bg: '#000', bgGradient: null },
             'white': { bg: '#fff', bgGradient: null },
-            'purple': { bg: '#7C3AED', bgGradient: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)' },
-            'green': { bg: '#047857', bgGradient: 'linear-gradient(135deg, #047857 0%, #059669 100%)' },
-            'beige': { bg: '#F5E6D3', bgGradient: null },
+            'blue': { bg: '#008EFF', bgGradient: null },
             'light-gray': { bg: '#E5E7EB', bgGradient: null }
         };
 
         const config = themeConfig[theme] || themeConfig['black'];
 
         // Apply background
-        if (config.bgGradient) {
-            const gradient = ctx.createLinearGradient(0, 0, 1200, 630);
-            gradient.addColorStop(0, config.bg);
-            gradient.addColorStop(1, config.bg === '#7C3AED' ? '#A855F7' : '#059669');
-            ctx.fillStyle = gradient;
-        } else {
-            ctx.fillStyle = config.bg;
-        }
+        ctx.fillStyle = config.bg;
         ctx.fillRect(0, 0, 1200, 630);
 
         // Diagonal perspective repeating grid layout (matching Figma design)
@@ -254,8 +247,8 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
         ctx.drawImage(heroSlide, heroX, heroY, heroWidth, heroHeight);
         ctx.restore();
 
-        // Return as base64
-        return canvas.toDataURL('image/jpeg', 0.95);
+        // Return as base64 with high quality
+        return canvas.toDataURL('image/jpeg', 0.98);
     }, slides, heroSlide, colorTheme);
 
     await browser.close();
