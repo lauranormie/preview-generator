@@ -11,9 +11,8 @@
   "author": "Laura James",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "puppeteer": "^23.0.0",
-    "cors": "^2.8.5"
+    "chrome-aws-lambda": "^10.1.0",
+    "puppeteer-core": "^10.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
