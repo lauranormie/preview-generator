@@ -22,7 +22,7 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
     await page.setViewport({ width: 1200, height: 750 });
 
     console.log('📂 Loading template:', templateUrl);
-    await page.goto(templateUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.goto(templateUrl, { waitUntil: 'networkidle2', timeout: 90000 });
 
     console.log('⏳ Waiting for slides to load...');
     // Wait for buttons and iframe to be ready
@@ -32,7 +32,7 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
             const iframe = document.querySelector('iframe');
             return buttons.length >= 11 && iframe !== null;
         },
-        { timeout: 45000 }
+        { timeout: 90000 }
     );
 
     await wait(1500);
