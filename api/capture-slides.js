@@ -36,11 +36,11 @@ async function captureSlides(templateUrl) {
     // Balanced viewport for memory and quality
     await page.setViewport({ width: 1200, height: 750 });
 
-    // Set longer default timeout for all operations
-    page.setDefaultTimeout(120000);
+    // Set shorter timeout for all operations
+    page.setDefaultTimeout(30000);
 
     console.log('📂 Loading template:', templateUrl);
-    await page.goto(templateUrl, { waitUntil: 'networkidle2', timeout: 90000 });
+    await page.goto(templateUrl, { waitUntil: 'networkidle2', timeout: 30000 });
 
     console.log('⏳ Waiting for slides to load...');
     // Wait for buttons and iframe to be ready
@@ -50,32 +50,11 @@ async function captureSlides(templateUrl) {
             const iframe = document.querySelector('iframe');
             return buttons.length >= 11 && iframe !== null;
         },
-        { timeout: 90000 }
+        { timeout: 30000 }
     );
 
-    console.log('⏳ Ensuring iframe is fully loaded and stable...');
+    console.log('⏳ Ensuring iframe is fully loaded...');
     // Wait for iframe to be fully loaded
-    await page.waitForFunction(
-        () => {
-            const iframe = document.querySelector('iframe');
-            if (!iframe) return false;
-            try {
-                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                return iframeDoc && iframeDoc.readyState === 'complete';
-            } catch (e) {
-                return false;
-            }
-        },
-        { timeout: 90000 }
-    );
-
-    console.log('⏳ Waiting for iframe to fully stabilize...');
-    await wait(5000); // Extra time for iframe to stabilize
-
-    // Ensure page is ready
-    await page.evaluate(() => document.readyState);
-
-    // One more stability check before starting
     await page.waitForFunction(
         () => {
             const iframe = document.querySelector('iframe');
@@ -90,7 +69,8 @@ async function captureSlides(templateUrl) {
         { timeout: 30000 }
     );
 
-    await wait(2000); // Final stabilization wait
+    console.log('⏳ Stabilizing...');
+    await wait(3000); // Wait for iframe to stabilize
 
     // Capture all slides
     const slides = [];
@@ -100,28 +80,6 @@ async function captureSlides(templateUrl) {
     for (let i = 1; i <= 11; i++) {
         console.log(`📸 Capturing slide ${i}/11...`);
 
-        // Check if page is still alive
-        if (page.isClosed()) {
-            throw new Error('Page was closed unexpectedly');
-        }
-
-        // Verify iframe is still attached and loaded
-        const iframeStable = await page.evaluate(() => {
-            const iframe = document.querySelector('iframe');
-            if (!iframe) return false;
-            try {
-                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                return iframeDoc && iframeDoc.readyState === 'complete';
-            } catch (e) {
-                return false;
-            }
-        });
-
-        if (!iframeStable) {
-            console.log(`   ⚠️  Iframe unstable, waiting 2s...`);
-            await wait(2000);
-        }
-
         // Navigate to slide
         await page.evaluate((slideNum) => {
             const buttons = document.querySelectorAll('button[type="button"]');
@@ -130,26 +88,7 @@ async function captureSlides(templateUrl) {
             }
         }, i);
 
-        await wait(1500); // Wait for slide transition and rendering
-
-        // Wait for iframe content to be visible
-        await page.waitForFunction(
-            () => {
-                const iframe = document.querySelector('iframe');
-                if (!iframe) return false;
-                try {
-                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                    const body = iframeDoc.body;
-                    // Check if body has actual content (not empty/white)
-                    return body && body.innerHTML.length > 100;
-                } catch (e) {
-                    return false;
-                }
-            },
-            { timeout: 10000 }
-        ).catch(() => console.log('   ⚠️  Iframe content check timed out, continuing anyway'));
-
-        await wait(500); // Extra buffer
+        await wait(800); // Wait for slide transition
 
         // Take screenshot as JPEG to reduce memory (much smaller than PNG)
         let screenshot;
@@ -161,8 +100,8 @@ async function captureSlides(templateUrl) {
                 quality: 90
             });
         } catch (screenshotError) {
-            console.log(`   ⚠️  Screenshot failed, retrying after 2s...`);
-            await wait(2000);
+            console.log(`   ⚠️  Screenshot failed, retrying...`);
+            await wait(500);
             screenshot = await page.screenshot({
                 clip: SLIDE_CROP,
                 encoding: 'base64',
