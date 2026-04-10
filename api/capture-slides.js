@@ -37,48 +37,30 @@ async function captureSlides(templateUrl) {
     await page.setViewport({ width: 1200, height: 750 });
 
     // Set timeout for operations
-    page.setDefaultTimeout(60000);
+    page.setDefaultTimeout(30000);
 
     console.log('📂 Loading template:', templateUrl);
-    await page.goto(templateUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.goto(templateUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-    console.log('⏳ Waiting for slides to load...');
-    // Wait for buttons and iframe to be ready
-    await page.waitForFunction(
-        () => {
-            const buttons = document.querySelectorAll('button[type="button"]');
-            const iframe = document.querySelector('iframe');
-            return buttons.length >= 11 && iframe !== null;
-        },
-        { timeout: 40000 }
-    );
+    console.log('⏳ Waiting for page to be ready...');
+    // Simple fixed wait - more reliable than complex checks
+    await wait(10000); // 10 second fixed wait for everything to load
 
-    console.log('⏳ Ensuring iframe is fully loaded...');
-    // Wait for iframe to be fully loaded
-    await page.waitForFunction(
-        () => {
-            const iframe = document.querySelector('iframe');
-            if (!iframe) return false;
-            try {
-                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                return iframeDoc && iframeDoc.readyState === 'complete';
-            } catch (e) {
-                return false;
-            }
-        },
-        { timeout: 25000 }
-    );
+    console.log('✅ Page loaded, detecting slide count...');
+    const slideCount = await page.evaluate(() => {
+        const buttons = document.querySelectorAll('button[type="button"]');
+        return buttons.length;
+    });
 
-    console.log('⏳ Stabilizing...');
-    await wait(1500); // Wait for iframe to stabilize
+    console.log(`   Found ${slideCount} slides`);
 
     // Capture all slides
     const slides = [];
     // Coordinates for 1200x750 viewport
     const SLIDE_CROP = { x: 88, y: 20, width: 1025, height: 577 };
 
-    for (let i = 1; i <= 11; i++) {
-        console.log(`📸 Capturing slide ${i}/11...`);
+    for (let i = 1; i <= slideCount; i++) {
+        console.log(`📸 Capturing slide ${i}/${slideCount}...`);
 
         // Navigate to slide
         await page.evaluate((slideNum) => {
