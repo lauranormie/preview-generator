@@ -233,8 +233,7 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
         const themeConfig = {
             'black': { bg: '#000', bgGradient: null },
             'white': { bg: '#fff', bgGradient: null },
-            'blue': { bg: '#008EFF', bgGradient: null },
-            'light-gray': { bg: '#E5E7EB', bgGradient: null }
+            'blue': { bg: '#008EFF', bgGradient: null }
         };
 
         const config = themeConfig[theme] || themeConfig['black'];
