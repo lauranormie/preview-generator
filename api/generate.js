@@ -7,28 +7,37 @@ const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'black') {
     console.log('🚀 Launching browser...');
 
-    const browser = await puppeteer.launch({
-        args: [
-            ...chromium.args,
-            '--disable-dev-shm-usage',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu',
-            '--disable-web-security',
-            '--disable-features=IsolateOrigins,site-per-process'
-        ],
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
-        ignoreHTTPSErrors: true,
-    });
+    let browser = null;
+
+    try {
+        browser = await puppeteer.launch({
+            args: [
+                ...chromium.args,
+                '--disable-dev-shm-usage',
+                '--no-first-run',
+                '--no-zygote',
+                '--disable-gpu',
+                '--disable-web-security',
+                '--disable-features=IsolateOrigins,site-per-process',
+                '--single-process',
+                '--no-sandbox'
+            ],
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath(),
+            headless: chromium.headless,
+            ignoreHTTPSErrors: true,
+        });
 
     const page = await browser.newPage();
 
     // Set user agent to look like a real browser
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-    await page.setViewport({ width: 1200, height: 750 });
+    // Smaller viewport to reduce memory usage
+    await page.setViewport({ width: 1000, height: 625 });
+
+    // Set longer default timeout for all operations
+    page.setDefaultTimeout(120000);
 
     console.log('📂 Loading template:', templateUrl);
     await page.goto(templateUrl, { waitUntil: 'networkidle2', timeout: 90000 });
@@ -67,7 +76,8 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
 
     // Capture all slides
     const slides = [];
-    const SLIDE_CROP = { x: 88, y: 20, width: 1025, height: 577 };
+    // Coordinates for 1000x625 viewport (scaled down for memory efficiency)
+    const SLIDE_CROP = { x: 73, y: 17, width: 854, height: 481 };
 
     for (let i = 1; i <= 11; i++) {
         console.log(`📸 Capturing slide ${i}/11...`);
@@ -280,14 +290,27 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
         return canvas.toDataURL('image/jpeg', 0.95);
     }, slides, heroSlide, colorTheme);
 
-    await browser.close();
-
     console.log('✅ Preview generated\n');
 
     return {
         preview: previewBase64,
         slides: slides.map(s => ({ brightness: s.brightness, number: s.number }))
     };
+
+    } catch (error) {
+        console.error('❌ Error during capture:', error);
+        throw error;
+    } finally {
+        // Always clean up browser
+        if (browser) {
+            try {
+                await browser.close();
+                console.log('🧹 Browser closed');
+            } catch (closeError) {
+                console.error('Warning: Error closing browser:', closeError);
+            }
+        }
+    }
 }
 
 module.exports = async (req, res) => {
