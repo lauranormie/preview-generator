@@ -212,6 +212,10 @@
             position: relative;
         }
 
+        .slide-thumb:hover .retry-slide {
+            opacity: 1;
+        }
+
         .slide-thumb img {
             width: 100%;
             height: auto;
@@ -228,6 +232,31 @@
             border-radius: 4px;
             font-size: 12px;
             font-weight: 600;
+        }
+
+        .retry-slide {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: #667eea;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .retry-slide:hover {
+            background: #5568d3;
+        }
+
+        .retry-slide:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .stats {
@@ -438,6 +467,77 @@
     <script>
         // Global state
         let capturedSlides = null;
+        let currentTemplateUrl = null;
+
+        // Render slide thumbnails with retry buttons
+        function renderSlides(slides) {
+            slidesGrid.innerHTML = '';
+            slides.forEach((slide, idx) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'slide-thumb';
+                thumb.innerHTML = `
+                    <img src="data:image/jpeg;base64,${slide.data}" alt="Slide ${idx + 1}">
+                    <div class="slide-number">Slide ${idx + 1}</div>
+                    <button class="retry-slide" data-slide-index="${idx}">🔄 Retry</button>
+                `;
+                slidesGrid.appendChild(thumb);
+            });
+
+            // Add retry click handlers
+            document.querySelectorAll('.retry-slide').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const slideIndex = parseInt(e.target.dataset.slideIndex);
+                    await retrySlide(slideIndex);
+                });
+            });
+        }
+
+        // Retry capturing a single slide
+        async function retrySlide(slideIndex) {
+            if (!currentTemplateUrl) {
+                alert('Cannot retry - template URL not found');
+                return;
+            }
+
+            const btn = document.querySelector(`.retry-slide[data-slide-index="${slideIndex}"]`);
+            btn.disabled = true;
+            btn.textContent = '⏳ Retrying...';
+
+            try {
+                const response = await fetch('/api/capture-slides', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        templateUrl: currentTemplateUrl,
+                        singleSlide: slideIndex + 1  // 1-indexed
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.slides && data.slides.length > 0) {
+                    // Update the slide in memory
+                    capturedSlides[slideIndex] = data.slides[0];
+
+                    // Update cache
+                    const cachedData = JSON.parse(sessionStorage.getItem('capturedSlides'));
+                    cachedData.slides[slideIndex] = data.slides[0];
+                    sessionStorage.setItem('capturedSlides', JSON.stringify(cachedData));
+
+                    // Re-render slides
+                    renderSlides(capturedSlides);
+
+                    console.log(`Slide ${slideIndex + 1} recaptured successfully`);
+                } else {
+                    throw new Error('Failed to recapture slide');
+                }
+            } catch (err) {
+                console.error(err);
+                alert(`Failed to retry slide ${slideIndex + 1}: ${err.message}`);
+                btn.disabled = false;
+                btn.textContent = '🔄 Retry';
+            }
+        }
 
         // Check for cached slides on load
         function loadCachedSlides() {
@@ -446,23 +546,15 @@
                 try {
                     const data = JSON.parse(cached);
                     capturedSlides = data.slides;
+                    currentTemplateUrl = data.templateUrl || null;
 
                     // Show stats
                     document.getElementById('totalSlides').textContent = data.stats.totalSlides;
                     document.getElementById('lightCount').textContent = data.stats.lightCount;
                     document.getElementById('darkCount').textContent = data.stats.darkCount;
 
-                    // Show slide thumbnails
-                    slidesGrid.innerHTML = '';
-                    data.slides.forEach((slide, idx) => {
-                        const thumb = document.createElement('div');
-                        thumb.className = 'slide-thumb';
-                        thumb.innerHTML = `
-                            <img src="data:image/jpeg;base64,${slide.data}" alt="Slide ${idx + 1}">
-                            <div class="slide-number">Slide ${idx + 1}</div>
-                        `;
-                        slidesGrid.appendChild(thumb);
-                    });
+                    // Render slide thumbnails with retry buttons
+                    renderSlides(capturedSlides);
 
                     // Populate hero slide dropdown
                     const heroSlideSelect = document.getElementById('heroSlide');
@@ -536,6 +628,8 @@
 
                 // Store captured slides in memory and cache
                 capturedSlides = data.slides;
+                currentTemplateUrl = templateUrl;
+                data.templateUrl = templateUrl; // Add templateUrl to cached data
                 sessionStorage.setItem('capturedSlides', JSON.stringify(data));
 
                 // Show stats
@@ -543,17 +637,8 @@
                 document.getElementById('lightCount').textContent = data.stats.lightCount;
                 document.getElementById('darkCount').textContent = data.stats.darkCount;
 
-                // Show slide thumbnails
-                slidesGrid.innerHTML = '';
-                data.slides.forEach((slide, idx) => {
-                    const thumb = document.createElement('div');
-                    thumb.className = 'slide-thumb';
-                    thumb.innerHTML = `
-                        <img src="data:image/jpeg;base64,${slide.data}" alt="Slide ${idx + 1}">
-                        <div class="slide-number">Slide ${idx + 1}</div>
-                    `;
-                    slidesGrid.appendChild(thumb);
-                });
+                // Render slide thumbnails with retry buttons
+                renderSlides(capturedSlides);
 
                 // Populate hero slide dropdown dynamically
                 const heroSlideSelect = document.getElementById('heroSlide');
@@ -677,100 +762,156 @@
             ctx.fillStyle = config.bg;
             ctx.fillRect(0, 0, 1200, 630);
 
-            // Diagonal perspective repeating grid layout
-            const tileWidth = 280;
-            const tileHeight = 158;
-            const spacing = 22;
-            const gridRotation = -25;
+            // Diagonal perspective repeating grid layout (matching Figma)
+            const tileWidth = 276;
+            const tileHeight = 155;
+            const spacing = 90;
+            const outerRotation = 2.45;
+            const innerRotation = 8.45;
+            const skewX = -28.33;
+            const scaleY = 0.88;
 
+            // Create 3 groups of grids for repeating pattern
             ctx.save();
-            ctx.translate(600, 315);
-            ctx.rotate((gridRotation * Math.PI) / 180);
+            ctx.translate(-200, 315); // Left-aligned with overflow
+            ctx.rotate((outerRotation * Math.PI) / 180);
 
-            // Create repeating diagonal grid
-            const cols = 6;
-            const rows = 4;
+            // Draw 3 repeating groups
+            for (let groupIdx = 0; groupIdx < 3; groupIdx++) {
+                ctx.save();
+                ctx.translate(groupIdx * 900, groupIdx * 138); // Offset each group
 
-            let slideIdx = 0;
-            for (let row = 0; row < rows; row++) {
-                for (let col = 0; col < cols; col++) {
-                    if (slideIdx >= balancedSlides.length) slideIdx = 0;
+                // Apply inner transformations
+                ctx.rotate((innerRotation * Math.PI) / 180);
+                ctx.scale(1, scaleY);
+                ctx.transform(1, 0, Math.tan((skewX * Math.PI) / 180), 1, 0, 0); // Skew-x
 
-                    let x = col * (tileWidth + spacing) - ((cols * (tileWidth + spacing)) / 2);
-                    let y = row * (tileHeight + spacing) - ((rows * (tileHeight + spacing)) / 2);
+                // Create 3x3 grid
+                const cols = 3;
+                const rows = 3;
 
-                    if (row % 2 === 1) {
-                        x += (tileWidth + spacing) / 2;
+                let slideIdx = groupIdx * 9;
+                for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < cols; col++) {
+                        if (slideIdx >= balancedSlides.length) slideIdx = 0;
+
+                        const x = col * (tileWidth + spacing);
+                        const y = row * (tileHeight + spacing);
+
+                        ctx.save();
+                        ctx.globalAlpha = 0.5;
+
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+
+                        ctx.drawImage(
+                            balancedSlides[slideIdx].img,
+                            x,
+                            y,
+                            tileWidth,
+                            tileHeight
+                        );
+
+                        ctx.restore();
+                        slideIdx++;
                     }
-
-                    ctx.save();
-                    ctx.translate(x + tileWidth / 2, y + tileHeight / 2);
-                    ctx.globalAlpha = 0.55;
-
-                    ctx.imageSmoothingEnabled = true;
-                    ctx.imageSmoothingQuality = 'high';
-
-                    ctx.drawImage(
-                        balancedSlides[slideIdx].img,
-                        -tileWidth / 2,
-                        -tileHeight / 2,
-                        tileWidth,
-                        tileHeight
-                    );
-
-                    ctx.restore();
-                    slideIdx++;
                 }
+
+                ctx.restore();
             }
 
             ctx.restore();
 
-            // Add hero image with rounded corners and shadow
-            const heroSlide = loadedSlides[heroIdx].img;
-            const heroWidth = 600;
-            const heroHeight = (heroSlide.height / heroSlide.width) * heroWidth;
-            const heroX = (1200 - heroWidth) / 2;
-            const heroY = (630 - heroHeight) / 2;
-            const borderRadius = 20;
-
-            // Draw shadow first
+            // Add gradient overlay (matches Figma fade effect)
             ctx.save();
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
-            ctx.shadowBlur = 30;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 15;
+            ctx.translate(564, 548); // Position gradient overlay
+            ctx.rotate((10.17 * Math.PI) / 180);
+            ctx.scale(1, 0.82);
+            ctx.transform(1, 0, Math.tan((-34.7 * Math.PI) / 180), 1, 0, 0); // Skew-x
 
-            // Draw a filled rounded rectangle to cast the shadow
-            ctx.beginPath();
-            ctx.moveTo(heroX + borderRadius, heroY);
-            ctx.lineTo(heroX + heroWidth - borderRadius, heroY);
-            ctx.arcTo(heroX + heroWidth, heroY, heroX + heroWidth, heroY + borderRadius, borderRadius);
-            ctx.lineTo(heroX + heroWidth, heroY + heroHeight - borderRadius);
-            ctx.arcTo(heroX + heroWidth, heroY + heroHeight, heroX + heroWidth - borderRadius, heroY + heroHeight, borderRadius);
-            ctx.lineTo(heroX + borderRadius, heroY + heroHeight);
-            ctx.arcTo(heroX, heroY + heroHeight, heroX, heroY + heroHeight - borderRadius, borderRadius);
-            ctx.lineTo(heroX, heroY + borderRadius);
-            ctx.arcTo(heroX, heroY, heroX + borderRadius, heroY, borderRadius);
-            ctx.closePath();
+            const gradient = ctx.createLinearGradient(0, -434, 0, 434);
+            gradient.addColorStop(0, config.bg); // Solid color at top
+
+            // Convert hex to rgba for transparency
+            let transparentColor;
+            if (config.bg.startsWith('#')) {
+                // Convert hex to rgba
+                const hex = config.bg.replace('#', '');
+                const r = parseInt(hex.substring(0, 2), 16);
+                const g = parseInt(hex.substring(2, 4), 16);
+                const b = parseInt(hex.substring(4, 6), 16);
+                transparentColor = `rgba(${r}, ${g}, ${b}, 0)`;
+            } else {
+                // Already rgb format
+                transparentColor = config.bg.replace(')', ', 0)').replace('rgb', 'rgba');
+            }
+            gradient.addColorStop(0.5, transparentColor); // Transparent at 50%
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(-952, -434, 1904, 868);
+            ctx.restore();
+
+            // Add hero image with rounded corners and layered shadows (matching Figma)
+            const heroSlide = loadedSlides[heroIdx].img;
+            const heroWidth = 713;
+            const heroHeight = (heroSlide.height / heroSlide.width) * heroWidth;
+            const heroX = 243; // Left-aligned as in Figma
+            const heroY = (630 - heroHeight) / 2;
+            const borderRadius = 18;
+
+            // Helper function to draw rounded rectangle path
+            function roundRect(ctx, x, y, width, height, radius) {
+                ctx.beginPath();
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + width - radius, y);
+                ctx.arcTo(x + width, y, x + width, y + radius, radius);
+                ctx.lineTo(x + width, y + height - radius);
+                ctx.arcTo(x + width, y + height, x + width - radius, y + height, radius);
+                ctx.lineTo(x + radius, y + height);
+                ctx.arcTo(x, y + height, x, y + height - radius, radius);
+                ctx.lineTo(x, y + radius);
+                ctx.arcTo(x, y, x + radius, y, radius);
+                ctx.closePath();
+            }
+
+            // Draw layered shadows (Figma: 0px 94px 100px + 0px 0px 3px)
+            // Large soft shadow
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+            ctx.shadowBlur = 100;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 94;
+            roundRect(ctx, heroX, heroY, heroWidth, heroHeight, borderRadius);
             ctx.fillStyle = '#000';
             ctx.fill();
             ctx.restore();
 
-            // Now draw the actual hero slide with rounded corners (no shadow)
+            // Tight edge shadow
             ctx.save();
-            ctx.beginPath();
-            ctx.moveTo(heroX + borderRadius, heroY);
-            ctx.lineTo(heroX + heroWidth - borderRadius, heroY);
-            ctx.arcTo(heroX + heroWidth, heroY, heroX + heroWidth, heroY + borderRadius, borderRadius);
-            ctx.lineTo(heroX + heroWidth, heroY + heroHeight - borderRadius);
-            ctx.arcTo(heroX + heroWidth, heroY + heroHeight, heroX + heroWidth - borderRadius, heroY + heroHeight, borderRadius);
-            ctx.lineTo(heroX + borderRadius, heroY + heroHeight);
-            ctx.arcTo(heroX, heroY + heroHeight, heroX, heroY + heroHeight - borderRadius, borderRadius);
-            ctx.lineTo(heroX, heroY + borderRadius);
-            ctx.arcTo(heroX, heroY, heroX + borderRadius, heroY, borderRadius);
-            ctx.closePath();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+            ctx.shadowBlur = 3;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            roundRect(ctx, heroX, heroY, heroWidth, heroHeight, borderRadius);
+            ctx.fillStyle = '#000';
+            ctx.fill();
+            ctx.restore();
+
+            // Draw the actual hero slide with rounded corners
+            ctx.save();
+            roundRect(ctx, heroX, heroY, heroWidth, heroHeight, borderRadius);
             ctx.clip();
             ctx.drawImage(heroSlide, heroX, heroY, heroWidth, heroHeight);
+            ctx.restore();
+
+            // Add inner shadow/highlight (Figma: inset 0px 0px 3px rgba(255,255,255,0.1))
+            // Canvas doesn't support inset shadows, so we'll draw a subtle border glow
+            ctx.save();
+            ctx.globalAlpha = 0.1;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
+            ctx.lineWidth = 1;
+            roundRect(ctx, heroX + 0.5, heroY + 0.5, heroWidth - 1, heroHeight - 1, borderRadius);
+            ctx.stroke();
             ctx.restore();
         }
 

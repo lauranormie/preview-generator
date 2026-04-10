@@ -4,7 +4,7 @@ const puppeteer = require('puppeteer-core');
 // Helper function to wait
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function captureSlides(templateUrl) {
+async function captureSlides(templateUrl, singleSlideNumber = null) {
     console.log('🚀 Launching browser...');
 
     let browser = null;
@@ -54,12 +54,20 @@ async function captureSlides(templateUrl) {
 
     console.log(`   Found ${slideCount} slides`);
 
-    // Capture all slides
+    // Determine which slides to capture
+    const startSlide = singleSlideNumber || 1;
+    const endSlide = singleSlideNumber || slideCount;
+
+    if (singleSlideNumber) {
+        console.log(`   Single slide mode: capturing slide ${singleSlideNumber}`);
+    }
+
+    // Capture slides
     const slides = [];
     // Coordinates for 1200x750 viewport
     const SLIDE_CROP = { x: 88, y: 20, width: 1025, height: 577 };
 
-    for (let i = 1; i <= slideCount; i++) {
+    for (let i = startSlide; i <= endSlide; i++) {
         console.log(`📸 Capturing slide ${i}/${slideCount}...`);
 
         // Navigate to slide
@@ -179,17 +187,23 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { templateUrl } = req.body;
+        const { templateUrl, singleSlide } = req.body;
 
         if (!templateUrl) {
             return res.status(400).json({ error: 'Template URL is required' });
         }
 
-        console.log('\n🎬 Stage 1: Capturing slides...');
-        console.log('   URL:', templateUrl);
-        console.log('');
+        if (singleSlide) {
+            console.log(`\n🔄 Retrying single slide ${singleSlide}...`);
+            console.log('   URL:', templateUrl);
+            console.log('');
+        } else {
+            console.log('\n🎬 Stage 1: Capturing slides...');
+            console.log('   URL:', templateUrl);
+            console.log('');
+        }
 
-        const slides = await captureSlides(templateUrl);
+        const slides = await captureSlides(templateUrl, singleSlide);
 
         const lightCount = slides.filter(s => s.brightness === 'light').length;
         const darkCount = slides.filter(s => s.brightness === 'dark').length;
@@ -199,7 +213,12 @@ module.exports = async (req, res) => {
         console.log(`   Light backgrounds: ${lightCount}`);
         console.log(`   Dark backgrounds: ${darkCount}`);
         console.log('');
-        console.log('✨ Stage 1 complete! Slides ready for preview generation\n');
+
+        if (singleSlide) {
+            console.log(`✨ Slide ${singleSlide} recaptured successfully!\n`);
+        } else {
+            console.log('✨ Stage 1 complete! Slides ready for preview generation\n');
+        }
 
         res.json({
             success: true,
