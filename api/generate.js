@@ -299,16 +299,14 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
         const heroY = (630 - heroHeight) / 2;
         const borderRadius = 20;
 
-        // Draw hero slide with rounded corners and shadow in one pass
+        // Draw shadow first
         ctx.save();
-
-        // Apply shadow
         ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
         ctx.shadowBlur = 30;
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 15;
 
-        // Create rounded rectangle clipping path
+        // Draw a filled rounded rectangle to cast the shadow
         ctx.beginPath();
         ctx.moveTo(heroX + borderRadius, heroY);
         ctx.lineTo(heroX + heroWidth - borderRadius, heroY);
@@ -320,16 +318,25 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
         ctx.lineTo(heroX, heroY + borderRadius);
         ctx.arcTo(heroX, heroY, heroX + borderRadius, heroY, borderRadius);
         ctx.closePath();
-
-        // Fill the path first (this casts the shadow)
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = '#000'; // Black fill for shadow
         ctx.fill();
+        ctx.restore();
 
-        // Now clip and draw the image
+        // Now draw the actual hero slide with rounded corners (no shadow)
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(heroX + borderRadius, heroY);
+        ctx.lineTo(heroX + heroWidth - borderRadius, heroY);
+        ctx.arcTo(heroX + heroWidth, heroY, heroX + heroWidth, heroY + borderRadius, borderRadius);
+        ctx.lineTo(heroX + heroWidth, heroY + heroHeight - borderRadius);
+        ctx.arcTo(heroX + heroWidth, heroY + heroHeight, heroX + heroWidth - borderRadius, heroY + heroHeight, borderRadius);
+        ctx.lineTo(heroX + borderRadius, heroY + heroHeight);
+        ctx.arcTo(heroX, heroY + heroHeight, heroX, heroY + heroHeight - borderRadius, borderRadius);
+        ctx.lineTo(heroX, heroY + borderRadius);
+        ctx.arcTo(heroX, heroY, heroX + borderRadius, heroY, borderRadius);
+        ctx.closePath();
         ctx.clip();
-        ctx.shadowColor = 'transparent'; // Remove shadow for image drawing
         ctx.drawImage(heroSlide, heroX, heroY, heroWidth, heroHeight);
-
         ctx.restore();
 
         // Return as base64 with good quality (balanced for memory)
