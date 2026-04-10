@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1100px;
             margin: 0 auto;
         }
 
@@ -48,6 +48,13 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             color: #333;
             margin-bottom: 30px;
+        }
+
+        .stage-header {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            color: #667eea;
         }
 
         .input-group {
@@ -152,56 +159,6 @@
             font-weight: 600;
         }
 
-        .result {
-            display: none;
-        }
-
-        .result.active {
-            display: block;
-        }
-
-        .preview-container {
-            position: relative;
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 25px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-
-        .preview-img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-bottom: 25px;
-            padding: 25px;
-            background: #f8f9fa;
-            border-radius: 12px;
-        }
-
-        .stat {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: 800;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
         .error {
             display: none;
             background: #ff4444;
@@ -233,6 +190,104 @@
             font-size: 12px;
         }
 
+        .slides-preview {
+            display: none;
+        }
+
+        .slides-preview.active {
+            display: block;
+        }
+
+        .slides-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .slide-thumb {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .slide-thumb img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .slide-number {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .preview-options {
+            display: none;
+        }
+
+        .preview-options.active {
+            display: block;
+        }
+
+        .final-preview {
+            display: none;
+        }
+
+        .final-preview.active {
+            display: block;
+        }
+
+        .preview-container {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .preview-img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
         .footer {
             text-align: center;
             margin-top: 40px;
@@ -242,17 +297,23 @@
         .footer p {
             font-size: 14px;
         }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>🎨 Social Preview Generator</h1>
-            <p class="subtitle">Paste a Supernormal template URL and generate a social preview image automatically</p>
+            <p class="subtitle">Two-stage generation: capture slides, then compose preview instantly</p>
         </div>
 
-        <div class="card">
-            <form id="generateForm">
+        <!-- Stage 1: Capture Slides -->
+        <div class="card" id="stage1Card">
+            <h2 class="stage-header">Stage 1: Capture Slides</h2>
+            <form id="captureForm">
                 <div class="input-group">
                     <label for="templateUrl">Template URL</label>
                     <input
@@ -266,137 +327,392 @@
                     </div>
                 </div>
 
-                <div class="input-group">
-                    <label for="colorTheme">Color Theme</label>
-                    <select id="colorTheme">
-                        <option value="black">Black</option>
-                        <option value="white">White</option>
-                        <option value="blue">Supernormal Blue</option>
-                    </select>
-                </div>
-
-                <div class="input-group">
-                    <label for="heroSlide">Hero Slide (centered)</label>
-                    <select id="heroSlide">
-                        <option value="0">Slide 1 (First)</option>
-                        <option value="1">Slide 2</option>
-                        <option value="2">Slide 3</option>
-                        <option value="3">Slide 4</option>
-                        <option value="4">Slide 5</option>
-                        <option value="5">Slide 6</option>
-                        <option value="6">Slide 7</option>
-                        <option value="7">Slide 8</option>
-                        <option value="8">Slide 9</option>
-                        <option value="9">Slide 10</option>
-                        <option value="10">Slide 11</option>
-                    </select>
-                </div>
-
-                <button type="submit" class="btn" id="generateBtn">
-                    ✨ Generate Social Preview
+                <button type="submit" class="btn" id="captureBtn">
+                    📸 Capture All Slides
                 </button>
             </form>
 
-            <div class="error" id="error"></div>
+            <div class="error" id="captureError"></div>
 
-            <div class="loading" id="loading">
+            <div class="loading" id="captureLoading">
                 <div class="spinner"></div>
-                <div class="loading-text">Capturing slides and generating preview...</div>
-                <div style="margin-top: 15px; font-size: 14px; color: #888;">This takes about 2-3 minutes</div>
+                <div class="loading-text">Capturing slides...</div>
+                <div style="margin-top: 15px; font-size: 14px; color: #888;">This takes about 60-90 seconds</div>
+            </div>
+        </div>
+
+        <!-- Slides Preview -->
+        <div class="card slides-preview" id="slidesPreview">
+            <h2 class="stage-header">✅ Slides Captured Successfully</h2>
+
+            <div class="stats" id="stats">
+                <div class="stat">
+                    <div class="stat-value" id="totalSlides">0</div>
+                    <div class="stat-label">Total Slides</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="lightCount">0</div>
+                    <div class="stat-label">Light Backgrounds</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="darkCount">0</div>
+                    <div class="stat-label">Dark Backgrounds</div>
+                </div>
             </div>
 
-            <div class="result" id="result">
-                <div class="stats" id="stats">
-                    <div class="stat">
-                        <div class="stat-value" id="totalSlides">0</div>
-                        <div class="stat-label">Total Slides</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value" id="lightCount">0</div>
-                        <div class="stat-label">Light Backgrounds</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value" id="darkCount">0</div>
-                        <div class="stat-label">Dark Backgrounds</div>
-                    </div>
-                </div>
+            <div class="slides-grid" id="slidesGrid"></div>
 
-                <div class="preview-container">
-                    <img id="previewImg" class="preview-img" alt="Generated social preview">
-                </div>
+            <button class="btn" id="proceedToStage2">
+                ✨ Proceed to Stage 2: Generate Preview
+            </button>
+        </div>
 
-                <button class="btn btn-secondary" id="downloadBtn">
-                    📥 Download JPEG
-                </button>
+        <!-- Stage 2: Generate Preview -->
+        <div class="card preview-options" id="stage2Card">
+            <h2 class="stage-header">Stage 2: Generate Preview</h2>
+
+            <div class="input-group">
+                <label for="colorTheme">Color Theme</label>
+                <select id="colorTheme">
+                    <option value="black">Black</option>
+                    <option value="white">White</option>
+                    <option value="blue">Supernormal Blue</option>
+                </select>
             </div>
+
+            <div class="input-group">
+                <label for="heroSlide">Hero Slide (centered)</label>
+                <select id="heroSlide">
+                    <option value="0">Slide 1 (First)</option>
+                    <option value="1">Slide 2</option>
+                    <option value="2">Slide 3</option>
+                    <option value="3">Slide 4</option>
+                    <option value="4">Slide 5</option>
+                    <option value="5">Slide 6</option>
+                    <option value="6">Slide 7</option>
+                    <option value="7">Slide 8</option>
+                    <option value="8">Slide 9</option>
+                    <option value="9">Slide 10</option>
+                    <option value="10">Slide 11</option>
+                </select>
+            </div>
+
+            <button class="btn" id="generatePreviewBtn">
+                🎨 Generate Preview (Instant!)
+            </button>
+
+            <button class="btn btn-secondary" id="recaptureBtn">
+                🔄 Start Over (Capture New Slides)
+            </button>
+        </div>
+
+        <!-- Final Preview -->
+        <div class="card final-preview" id="finalPreview">
+            <h2 class="stage-header">🎉 Preview Generated</h2>
+
+            <div class="preview-container">
+                <canvas id="previewCanvas" width="1800" height="945"></canvas>
+            </div>
+
+            <button class="btn" id="downloadBtn">
+                📥 Download JPEG
+            </button>
+
+            <button class="btn btn-secondary" id="regenerateBtn">
+                🔄 Change Theme/Hero Slide
+            </button>
         </div>
 
         <div class="footer">
             <p>Created for Supernormal • Replicates Lucian's manual Figma workflow</p>
-            <p style="margin-top: 10px; opacity: 0.7;">Saves 99% of time, 99.9% of cost</p>
+            <p style="margin-top: 10px; opacity: 0.7;">Two-stage generation for better reliability</p>
         </div>
     </div>
 
     <script>
-        const form = document.getElementById('generateForm');
-        const generateBtn = document.getElementById('generateBtn');
-        const loading = document.getElementById('loading');
-        const result = document.getElementById('result');
-        const error = document.getElementById('error');
-        const previewImg = document.getElementById('previewImg');
-        const downloadBtn = document.getElementById('downloadBtn');
+        // Global state
+        let capturedSlides = null;
 
-        form.addEventListener('submit', async (e) => {
+        // DOM elements
+        const captureForm = document.getElementById('captureForm');
+        const captureBtn = document.getElementById('captureBtn');
+        const captureLoading = document.getElementById('captureLoading');
+        const captureError = document.getElementById('captureError');
+
+        const slidesPreview = document.getElementById('slidesPreview');
+        const slidesGrid = document.getElementById('slidesGrid');
+        const proceedBtn = document.getElementById('proceedToStage2');
+
+        const stage2Card = document.getElementById('stage2Card');
+        const generatePreviewBtn = document.getElementById('generatePreviewBtn');
+        const recaptureBtn = document.getElementById('recaptureBtn');
+
+        const finalPreview = document.getElementById('finalPreview');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const regenerateBtn = document.getElementById('regenerateBtn');
+
+        // Stage 1: Capture slides
+        captureForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const templateUrl = document.getElementById('templateUrl').value;
-            const colorTheme = document.getElementById('colorTheme').value;
-            const heroSlide = parseInt(document.getElementById('heroSlide').value);
 
             // Reset UI
-            error.classList.remove('active');
-            result.classList.remove('active');
-            loading.classList.add('active');
-            generateBtn.disabled = true;
+            captureError.classList.remove('active');
+            slidesPreview.classList.remove('active');
+            captureLoading.classList.add('active');
+            captureBtn.disabled = true;
 
             try {
-                const response = await fetch('/api/generate', {
+                const response = await fetch('/api/capture-slides', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ templateUrl, colorTheme, heroSlide }),
+                    body: JSON.stringify({ templateUrl }),
                 });
 
                 const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data.message || 'Failed to generate preview');
+                    throw new Error(data.message || 'Failed to capture slides');
                 }
 
-                // Show result
-                previewImg.src = data.preview;
+                // Store captured slides
+                capturedSlides = data.slides;
+
+                // Show stats
                 document.getElementById('totalSlides').textContent = data.stats.totalSlides;
                 document.getElementById('lightCount').textContent = data.stats.lightCount;
                 document.getElementById('darkCount').textContent = data.stats.darkCount;
 
-                loading.classList.remove('active');
-                result.classList.add('active');
+                // Show slide thumbnails
+                slidesGrid.innerHTML = '';
+                data.slides.forEach((slide, idx) => {
+                    const thumb = document.createElement('div');
+                    thumb.className = 'slide-thumb';
+                    thumb.innerHTML = `
+                        <img src="data:image/jpeg;base64,${slide.data}" alt="Slide ${idx + 1}">
+                        <div class="slide-number">Slide ${idx + 1}</div>
+                    `;
+                    slidesGrid.appendChild(thumb);
+                });
+
+                captureLoading.classList.remove('active');
+                slidesPreview.classList.add('active');
 
             } catch (err) {
                 console.error(err);
-                error.textContent = `Error: ${err.message}`;
-                error.classList.add('active');
-                loading.classList.remove('active');
+                captureError.textContent = `Error: ${err.message}`;
+                captureError.classList.add('active');
+                captureLoading.classList.remove('active');
             } finally {
-                generateBtn.disabled = false;
+                captureBtn.disabled = false;
             }
         });
 
+        // Proceed to Stage 2
+        proceedBtn.addEventListener('click', () => {
+            stage2Card.classList.add('active');
+            stage2Card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        // Recapture
+        recaptureBtn.addEventListener('click', () => {
+            capturedSlides = null;
+            slidesPreview.classList.remove('active');
+            stage2Card.classList.remove('active');
+            finalPreview.classList.remove('active');
+            document.getElementById('stage1Card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        // Regenerate with different options
+        regenerateBtn.addEventListener('click', () => {
+            finalPreview.classList.remove('active');
+            stage2Card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        // Stage 2: Generate preview (client-side canvas rendering)
+        generatePreviewBtn.addEventListener('click', async () => {
+            if (!capturedSlides) {
+                alert('No slides captured. Please complete Stage 1 first.');
+                return;
+            }
+
+            const colorTheme = document.getElementById('colorTheme').value;
+            const heroSlide = parseInt(document.getElementById('heroSlide').value);
+
+            generatePreviewBtn.disabled = true;
+            generatePreviewBtn.textContent = '🎨 Generating...';
+
+            try {
+                await renderPreview(capturedSlides, heroSlide, colorTheme);
+
+                finalPreview.classList.add('active');
+                finalPreview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } catch (err) {
+                alert('Error generating preview: ' + err.message);
+            } finally {
+                generatePreviewBtn.disabled = false;
+                generatePreviewBtn.textContent = '🎨 Generate Preview (Instant!)';
+            }
+        });
+
+        // Client-side canvas rendering
+        async function renderPreview(slidesData, heroIdx, theme) {
+            // Balance slides
+            function balanceSlides(slides) {
+                const light = slides.filter(s => s.brightness === 'light');
+                const dark = slides.filter(s => s.brightness === 'dark');
+
+                const balanced = [];
+                let lightIdx = 0;
+                let darkIdx = 0;
+
+                while (lightIdx < light.length || darkIdx < dark.length) {
+                    if (lightIdx < light.length) balanced.push(light[lightIdx++]);
+                    if (darkIdx < dark.length) balanced.push(dark[darkIdx++]);
+                }
+
+                return balanced;
+            }
+
+            // Load all slide images
+            const loadedSlides = await Promise.all(slidesData.map(async (slide) => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => resolve({ img, brightness: slide.brightness });
+                    img.src = 'data:image/jpeg;base64,' + slide.data;
+                });
+            }));
+
+            const balancedSlides = balanceSlides([...loadedSlides]);
+
+            // Create canvas at 1.5x resolution
+            const scale = 1.5;
+            const canvas = previewCanvas;
+            canvas.width = 1200 * scale;
+            canvas.height = 630 * scale;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(scale, scale);
+
+            // Color theme configuration
+            const themeConfig = {
+                'black': { bg: '#000' },
+                'white': { bg: '#fff' },
+                'blue': { bg: '#008EFF' }
+            };
+
+            const config = themeConfig[theme] || themeConfig['black'];
+
+            // Apply background
+            ctx.fillStyle = config.bg;
+            ctx.fillRect(0, 0, 1200, 630);
+
+            // Diagonal perspective repeating grid layout
+            const tileWidth = 280;
+            const tileHeight = 158;
+            const spacing = 22;
+            const gridRotation = -25;
+
+            ctx.save();
+            ctx.translate(600, 315);
+            ctx.rotate((gridRotation * Math.PI) / 180);
+
+            // Create repeating diagonal grid
+            const cols = 6;
+            const rows = 4;
+
+            let slideIdx = 0;
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    if (slideIdx >= balancedSlides.length) slideIdx = 0;
+
+                    let x = col * (tileWidth + spacing) - ((cols * (tileWidth + spacing)) / 2);
+                    let y = row * (tileHeight + spacing) - ((rows * (tileHeight + spacing)) / 2);
+
+                    if (row % 2 === 1) {
+                        x += (tileWidth + spacing) / 2;
+                    }
+
+                    ctx.save();
+                    ctx.translate(x + tileWidth / 2, y + tileHeight / 2);
+                    ctx.globalAlpha = 0.55;
+
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+
+                    ctx.drawImage(
+                        balancedSlides[slideIdx].img,
+                        -tileWidth / 2,
+                        -tileHeight / 2,
+                        tileWidth,
+                        tileHeight
+                    );
+
+                    ctx.restore();
+                    slideIdx++;
+                }
+            }
+
+            ctx.restore();
+
+            // Add hero image with rounded corners and shadow
+            const heroSlide = loadedSlides[heroIdx].img;
+            const heroWidth = 600;
+            const heroHeight = (heroSlide.height / heroSlide.width) * heroWidth;
+            const heroX = (1200 - heroWidth) / 2;
+            const heroY = (630 - heroHeight) / 2;
+            const borderRadius = 20;
+
+            // Draw shadow first
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+            ctx.shadowBlur = 30;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 15;
+
+            // Draw a filled rounded rectangle to cast the shadow
+            ctx.beginPath();
+            ctx.moveTo(heroX + borderRadius, heroY);
+            ctx.lineTo(heroX + heroWidth - borderRadius, heroY);
+            ctx.arcTo(heroX + heroWidth, heroY, heroX + heroWidth, heroY + borderRadius, borderRadius);
+            ctx.lineTo(heroX + heroWidth, heroY + heroHeight - borderRadius);
+            ctx.arcTo(heroX + heroWidth, heroY + heroHeight, heroX + heroWidth - borderRadius, heroY + heroHeight, borderRadius);
+            ctx.lineTo(heroX + borderRadius, heroY + heroHeight);
+            ctx.arcTo(heroX, heroY + heroHeight, heroX, heroY + heroHeight - borderRadius, borderRadius);
+            ctx.lineTo(heroX, heroY + borderRadius);
+            ctx.arcTo(heroX, heroY, heroX + borderRadius, heroY, borderRadius);
+            ctx.closePath();
+            ctx.fillStyle = '#000';
+            ctx.fill();
+            ctx.restore();
+
+            // Now draw the actual hero slide with rounded corners (no shadow)
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(heroX + borderRadius, heroY);
+            ctx.lineTo(heroX + heroWidth - borderRadius, heroY);
+            ctx.arcTo(heroX + heroWidth, heroY, heroX + heroWidth, heroY + borderRadius, borderRadius);
+            ctx.lineTo(heroX + heroWidth, heroY + heroHeight - borderRadius);
+            ctx.arcTo(heroX + heroWidth, heroY + heroHeight, heroX + heroWidth - borderRadius, heroY + heroHeight, borderRadius);
+            ctx.lineTo(heroX + borderRadius, heroY + heroHeight);
+            ctx.arcTo(heroX, heroY + heroHeight, heroX, heroY + heroHeight - borderRadius, borderRadius);
+            ctx.lineTo(heroX, heroY + borderRadius);
+            ctx.arcTo(heroX, heroY, heroX + borderRadius, heroY, borderRadius);
+            ctx.closePath();
+            ctx.clip();
+            ctx.drawImage(heroSlide, heroX, heroY, heroWidth, heroHeight);
+            ctx.restore();
+        }
+
+        // Download preview
         downloadBtn.addEventListener('click', () => {
+            const dataUrl = previewCanvas.toDataURL('image/jpeg', 0.90);
             const link = document.createElement('a');
             link.download = 'social-preview.jpg';
-            link.href = previewImg.src;
+            link.href = dataUrl;
             link.click();
         });
     </script>
