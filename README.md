@@ -1,124 +1,140 @@
-# Supernormal Social Preview Generator
+# Social Preview Generator
 
-Automatically generates social media preview images (Open Graph images) for Supernormal template pages.
+Automated tool to generate social preview images from Supernormal template slides. Replicates Lucian's manual Figma workflow with a two-stage generation process.
 
-## What It Does
+## Live URL
 
-Takes a Supernormal template URL and generates a professional 1200x630px social preview image featuring:
-- All 11 slides from the template
-- Isometric grid background with balanced light/dark distribution
-- Hero slide prominently displayed in center with shadow
-- Gradient fade for professional finish
+**https://supernormal-preview-generator.vercel.app**
 
-## Local Development
+## How It Works
 
-```bash
-npm install
-npm start
-```
+### Two-Stage Generation
 
-Open `http://localhost:3456` in your browser.
+**Stage 1: Capture Slides** (60-90 seconds)
+- Serverless function launches headless Chrome
+- Captures all 11 slides from the template
+- Returns slide thumbnails for user review
+- Provides stats (total slides, light/dark backgrounds)
 
-## Deploy to Railway
+**Stage 2: Generate Preview** (instant!)
+- Client-side canvas rendering in browser
+- Composes slides into 1200x630 social preview image
+- Diagonal grid background pattern
+- Hero slide centered with rounded corners and shadow
+- Can regenerate instantly with different themes/hero slides
 
-### 1. Push to GitHub
+### Benefits
 
-If not already in a Git repo:
+- **Better reliability** - Shorter serverless execution in Stage 1
+- **Better UX** - See slide thumbnails before generating
+- **Instant iteration** - Change theme/hero slide without recapturing
+- **Better error handling** - Know immediately if capture fails
+- **No timeout issues** - Canvas rendering is client-side
 
-```bash
-cd /Users/laurajames/Desktop/supernormal-preview-generator
-git init
-git add .
-git commit -m "Initial commit: Social preview generator"
-```
+## Technical Stack
 
-Create a new GitHub repo at https://github.com/new and push:
+- **Frontend**: Vanilla HTML/CSS/JavaScript with Canvas API
+- **Backend**: Vercel Serverless Functions (Node.js)
+- **Browser Automation**: Puppeteer + @sparticuz/chromium (serverless-optimized)
+- **Deployment**: Vercel
 
-```bash
-git remote add origin https://github.com/supernormalco/preview-generator.git
-git branch -M main
-git push -u origin main
-```
+## API Endpoints
 
-### 2. Deploy to Railway
+### POST /api/capture-slides
 
-1. Go to https://railway.app
-2. Sign in with GitHub
-3. Click "New Project"
-4. Select "Deploy from GitHub repo"
-5. Choose your `preview-generator` repository
-6. Railway will automatically detect the Dockerfile and deploy
+Captures all slides from a Supernormal template URL.
 
-### 3. Get Your URL
-
-Railway will provide a public URL like:
-```
-https://preview-generator-production.up.railway.app
-```
-
-Your team can now access the tool at that URL!
-
-## API Usage
-
-### Generate Preview
-
-**POST** `/api/generate`
-
+**Request:**
 ```json
 {
-  "templateUrl": "https://app.supernormal.com/share/xxx/embed",
-  "heroSlide": 0
+  "templateUrl": "https://app.supernormal.com/share/[id]/embed"
 }
 ```
 
 **Response:**
-
 ```json
 {
   "success": true,
-  "preview": "data:image/jpeg;base64,...",
+  "slides": [
+    {
+      "data": "base64-jpeg-data",
+      "brightness": "light|dark",
+      "number": 1
+    }
+  ],
   "stats": {
     "totalSlides": 11,
-    "lightCount": 4,
-    "darkCount": 7
+    "lightCount": 6,
+    "darkCount": 5
   }
 }
 ```
 
-### Health Check
+**Timeout:** 120 seconds
 
-**GET** `/api/health`
+## Color Themes
 
-Returns `{"status": "ok"}`
+- **Black** - Black background
+- **White** - White background
+- **Supernormal Blue** - #008EFF brand blue
 
-## Environment Variables
+## Output
 
-- `PORT` - Server port (default: 3456, Railway sets this automatically)
+- **Format**: JPEG
+- **Dimensions**: 1200x630 (optimal for social media)
+- **Quality**: 90%
+- **Resolution**: 1.5x render scale for crisp output
 
-## Tech Stack
+## Development
 
-- **Express** - Web server
-- **Puppeteer** - Headless browser for capturing slides
-- **Canvas API** - Browser-based image composition
-- **Docker** - Containerized deployment with Chrome pre-installed
+```bash
+npm install
+vercel dev
+```
 
-## How It Works
+## Deployment
 
-1. Launches headless Chrome with Puppeteer
-2. Loads template URL and waits for React app to render
-3. Clicks through all 11 slide buttons
-4. Captures each slide at precise iframe coordinates (x:105, y:24, w:1230, h:692)
-5. Analyzes brightness of each slide (light vs dark background)
-6. Balances color distribution by alternating light/dark slides
-7. Generates isometric grid background using Canvas API
-8. Composites hero slide in center with shadow effect
-9. Applies radial gradient fade
-10. Returns 1200x630 JPEG
+Automatically deploys to Vercel on push to main branch.
+
+```bash
+git push origin main
+```
+
+Or manual deployment:
+
+```bash
+vercel --prod
+```
+
+## Project Structure
+
+```
+├── api/
+│   └── capture-slides.js    # Stage 1: Serverless slide capture
+├── public/
+│   └── index.html            # Stage 2: UI + client-side canvas rendering
+├── package.json
+├── vercel.json              # Vercel configuration
+└── README.md
+```
+
+## Configuration
+
+`vercel.json` sets function timeout:
+
+```json
+{
+  "functions": {
+    "api/capture-slides.js": {
+      "maxDuration": 120
+    }
+  }
+}
+```
 
 ## Notes
 
-- Viewport: 1440x900 (matches desktop browser)
-- Slide crop area measured from iframe element
-- Anti-detection flags to prevent bot blocking
-- Wait time: 5 seconds after page load for full render
-- Brightness threshold: 128 (0-255 scale)
+- Requires Vercel paid plan for 120s function timeout
+- Captures exactly 11 slides per template
+- Simple alternating brightness detection (even = light, odd = dark)
+- Client-side rendering eliminates serverless memory constraints
