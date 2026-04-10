@@ -3,9 +3,6 @@
   "functions": {
     "api/capture-slides.js": {
       "maxDuration": 120
-    },
-    "api/generate.js": {
-      "maxDuration": 180
     }
   },
   "rewrites": [
