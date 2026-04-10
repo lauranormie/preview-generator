@@ -69,10 +69,28 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
         { timeout: 90000 }
     );
 
-    await wait(3000); // Extra time for iframe to stabilize
+    console.log('⏳ Waiting for iframe to fully stabilize...');
+    await wait(5000); // Extra time for iframe to stabilize
 
     // Ensure page is ready
     await page.evaluate(() => document.readyState);
+
+    // One more stability check before starting
+    await page.waitForFunction(
+        () => {
+            const iframe = document.querySelector('iframe');
+            if (!iframe) return false;
+            try {
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                return iframeDoc && iframeDoc.readyState === 'complete';
+            } catch (e) {
+                return false;
+            }
+        },
+        { timeout: 30000 }
+    );
+
+    await wait(2000); // Final stabilization wait
 
     // Capture all slides
     const slides = [];
@@ -112,7 +130,7 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
             }
         }, i);
 
-        await wait(800); // Wait for slide transition
+        await wait(1200); // Wait for slide transition and rendering
 
         // Take screenshot (PNG for quality) with retry logic
         let screenshot;
