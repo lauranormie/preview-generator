@@ -765,6 +765,12 @@
             ctx.fillStyle = config.bg;
             ctx.fillRect(0, 0, 1200, 630);
 
+            // Clip to canvas bounds to prevent dark edges
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(0, 0, 1200, 630);
+            ctx.clip();
+
             // Diagonal perspective repeating grid layout (exact Figma measurements)
             // From Figma: tile spacing is ~27px, not 90px
             const tileWidth = 276;
@@ -935,6 +941,9 @@
             ctx.lineWidth = 1;
             roundRect(ctx, heroX + 0.5, heroY + 0.5, heroWidth - 1, heroHeight - 1, borderRadius);
             ctx.stroke();
+            ctx.restore();
+
+            // Restore clipping region
             ctx.restore();
         }
 
