@@ -130,7 +130,26 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
             }
         }, i);
 
-        await wait(1200); // Wait for slide transition and rendering
+        await wait(1500); // Wait for slide transition and rendering
+
+        // Wait for iframe content to be visible
+        await page.waitForFunction(
+            () => {
+                const iframe = document.querySelector('iframe');
+                if (!iframe) return false;
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const body = iframeDoc.body;
+                    // Check if body has actual content (not empty/white)
+                    return body && body.innerHTML.length > 100;
+                } catch (e) {
+                    return false;
+                }
+            },
+            { timeout: 10000 }
+        ).catch(() => console.log('   ⚠️  Iframe content check timed out, continuing anyway'));
+
+        await wait(500); // Extra buffer
 
         // Take screenshot (PNG for quality) with retry logic
         let screenshot;
@@ -140,8 +159,8 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
                 encoding: 'base64'
             });
         } catch (screenshotError) {
-            console.log(`   ⚠️  Screenshot failed, retrying after 1s...`);
-            await wait(1000);
+            console.log(`   ⚠️  Screenshot failed, retrying after 2s...`);
+            await wait(2000);
             screenshot = await page.screenshot({
                 clip: SLIDE_CROP,
                 encoding: 'base64'
