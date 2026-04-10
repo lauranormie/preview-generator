@@ -1,15 +1,23 @@
 {
   "version": 2,
-  "buildCommand": null,
-  "outputDirectory": "public",
   "functions": {
     "api/capture-slides.js": {
       "maxDuration": 120
     }
   },
-  "headers": [
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/public/index.html"
+    },
     {
       "source": "/(.*)",
+      "destination": "/public/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/public/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
