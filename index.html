@@ -765,45 +765,60 @@
             ctx.fillStyle = config.bg;
             ctx.fillRect(0, 0, 1200, 630);
 
-            // Diagonal perspective repeating grid layout (matching Figma)
+            // Diagonal perspective repeating grid layout (exact Figma measurements)
+            // From Figma: tile spacing is ~27px, not 90px
             const tileWidth = 276;
             const tileHeight = 155;
-            const spacing = 90;
+            const tileGapX = 27;  // Horizontal gap between tiles
+            const tileGapY = 27;  // Vertical gap between tiles
             const outerRotation = 2.45;
             const innerRotation = 8.45;
             const skewX = -28.33;
             const scaleY = 0.88;
 
-            // Create 3 groups of grids for repeating pattern
+            // Figma positions: background starts at -1449px, -350px
+            // Group offsets from Figma
+            const groupOffsets = [
+                { x: 0, y: 0 },                    // Group 1
+                { x: 896.57, y: 137.93 },          // Group 2
+                { x: 1795.79, y: 275.87 }          // Group 3
+            ];
+
+            // Inner group positions (where tiles actually start)
+            const innerOffsets = [
+                { x: 133.34, y: 294.79 },
+                { x: 1029.9, y: 432.73 },
+                { x: 1929.12, y: 570.66 }
+            ];
+
             ctx.save();
-            ctx.translate(-200, 315); // Left-aligned with overflow
+            // Position the entire background pattern (Figma: left -1449, top -350)
+            ctx.translate(-1449, -350);
             ctx.rotate((outerRotation * Math.PI) / 180);
 
             // Draw 3 repeating groups
             for (let groupIdx = 0; groupIdx < 3; groupIdx++) {
                 ctx.save();
-                ctx.translate(groupIdx * 900, groupIdx * 138); // Offset each group
+
+                // Position this group
+                ctx.translate(innerOffsets[groupIdx].x, innerOffsets[groupIdx].y);
 
                 // Apply inner transformations
                 ctx.rotate((innerRotation * Math.PI) / 180);
                 ctx.scale(1, scaleY);
-                ctx.transform(1, 0, Math.tan((skewX * Math.PI) / 180), 1, 0, 0); // Skew-x
+                ctx.transform(1, 0, Math.tan((skewX * Math.PI) / 180), 1, 0, 0);
 
-                // Create 3x3 grid
-                const cols = 3;
-                const rows = 3;
-
+                // Create 3x3 grid with exact tile positions
                 let slideIdx = groupIdx * 9;
-                for (let row = 0; row < rows; row++) {
-                    for (let col = 0; col < cols; col++) {
+                for (let row = 0; row < 3; row++) {
+                    for (let col = 0; col < 3; col++) {
                         if (slideIdx >= balancedSlides.length) slideIdx = 0;
 
-                        const x = col * (tileWidth + spacing);
-                        const y = row * (tileHeight + spacing);
+                        const x = col * (tileWidth + tileGapX);
+                        const y = row * (tileHeight + tileGapY);
 
                         ctx.save();
                         ctx.globalAlpha = 0.5;
-
                         ctx.imageSmoothingEnabled = true;
                         ctx.imageSmoothingQuality = 'high';
 
@@ -825,22 +840,24 @@
 
             ctx.restore();
 
-            // Add gradient overlay (matches Figma fade effect)
+            // Add gradient overlay (exact Figma measurements)
+            // Figma: calc(50%-35.8px) = 564.2, calc(50%+233.31px) = 548.31
             ctx.save();
-            ctx.translate(564, 548); // Position gradient overlay
+            ctx.translate(564.2, 548.31);
             ctx.rotate((10.17 * Math.PI) / 180);
             ctx.scale(1, 0.82);
-            ctx.transform(1, 0, Math.tan((-34.7 * Math.PI) / 180), 1, 0, 0); // Skew-x
+            ctx.transform(1, 0, Math.tan((-34.7 * Math.PI) / 180), 1, 0, 0);
 
-            const gradient = ctx.createLinearGradient(0, -434, 0, 434);
-            gradient.addColorStop(0, config.bg); // Solid color at top
+            // Gradient rectangle: 1904.288 x 868.131, centered
+            const gradientWidth = 1904.288;
+            const gradientHeight = 868.131;
+            const gradient = ctx.createLinearGradient(0, -gradientHeight / 2, 0, gradientHeight / 2);
+            gradient.addColorStop(0, config.bg);
 
             // Convert hex to rgba for transparency
             let transparentColor;
             if (config.bg.startsWith('#')) {
-                // Convert hex to rgba
                 let hex = config.bg.replace('#', '');
-                // Expand shorthand hex (#000 → #000000)
                 if (hex.length === 3) {
                     hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
                 }
@@ -849,13 +866,12 @@
                 const b = parseInt(hex.substring(4, 6), 16);
                 transparentColor = `rgba(${r}, ${g}, ${b}, 0)`;
             } else {
-                // Already rgb format
                 transparentColor = config.bg.replace(')', ', 0)').replace('rgb', 'rgba');
             }
-            gradient.addColorStop(0.5, transparentColor); // Transparent at 50%
+            gradient.addColorStop(0.5, transparentColor);
 
             ctx.fillStyle = gradient;
-            ctx.fillRect(-952, -434, 1904, 868);
+            ctx.fillRect(-gradientWidth / 2, -gradientHeight / 2, gradientWidth, gradientHeight);
             ctx.restore();
 
             // Add hero image with rounded corners and layered shadows (matching Figma)
