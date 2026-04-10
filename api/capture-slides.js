@@ -36,11 +36,11 @@ async function captureSlides(templateUrl) {
     // Balanced viewport for memory and quality
     await page.setViewport({ width: 1200, height: 750 });
 
-    // Set shorter timeout for all operations
-    page.setDefaultTimeout(30000);
+    // Set timeout for operations
+    page.setDefaultTimeout(60000);
 
     console.log('📂 Loading template:', templateUrl);
-    await page.goto(templateUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+    await page.goto(templateUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
 
     console.log('⏳ Waiting for slides to load...');
     // Wait for buttons and iframe to be ready
@@ -50,7 +50,7 @@ async function captureSlides(templateUrl) {
             const iframe = document.querySelector('iframe');
             return buttons.length >= 11 && iframe !== null;
         },
-        { timeout: 30000 }
+        { timeout: 40000 }
     );
 
     console.log('⏳ Ensuring iframe is fully loaded...');
@@ -66,11 +66,11 @@ async function captureSlides(templateUrl) {
                 return false;
             }
         },
-        { timeout: 30000 }
+        { timeout: 25000 }
     );
 
     console.log('⏳ Stabilizing...');
-    await wait(3000); // Wait for iframe to stabilize
+    await wait(1500); // Wait for iframe to stabilize
 
     // Capture all slides
     const slides = [];
@@ -88,7 +88,7 @@ async function captureSlides(templateUrl) {
             }
         }, i);
 
-        await wait(800); // Wait for slide transition
+        await wait(600); // Wait for slide transition
 
         // Take screenshot as JPEG to reduce memory (much smaller than PNG)
         let screenshot;
