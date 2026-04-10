@@ -439,6 +439,55 @@
         // Global state
         let capturedSlides = null;
 
+        // Check for cached slides on load
+        function loadCachedSlides() {
+            const cached = sessionStorage.getItem('capturedSlides');
+            if (cached) {
+                try {
+                    const data = JSON.parse(cached);
+                    capturedSlides = data.slides;
+
+                    // Show stats
+                    document.getElementById('totalSlides').textContent = data.stats.totalSlides;
+                    document.getElementById('lightCount').textContent = data.stats.lightCount;
+                    document.getElementById('darkCount').textContent = data.stats.darkCount;
+
+                    // Show slide thumbnails
+                    slidesGrid.innerHTML = '';
+                    data.slides.forEach((slide, idx) => {
+                        const thumb = document.createElement('div');
+                        thumb.className = 'slide-thumb';
+                        thumb.innerHTML = `
+                            <img src="data:image/jpeg;base64,${slide.data}" alt="Slide ${idx + 1}">
+                            <div class="slide-number">Slide ${idx + 1}</div>
+                        `;
+                        slidesGrid.appendChild(thumb);
+                    });
+
+                    // Populate hero slide dropdown
+                    const heroSlideSelect = document.getElementById('heroSlide');
+                    heroSlideSelect.innerHTML = '';
+                    data.slides.forEach((slide, idx) => {
+                        const option = document.createElement('option');
+                        option.value = idx;
+                        option.textContent = idx === 0 ? `Slide 1 (First)` : `Slide ${idx + 1}`;
+                        heroSlideSelect.appendChild(option);
+                    });
+
+                    slidesPreview.classList.add('active');
+                    stage2Card.classList.add('active');
+
+                    console.log('Loaded cached slides from session');
+                } catch (e) {
+                    console.error('Failed to load cached slides:', e);
+                    sessionStorage.removeItem('capturedSlides');
+                }
+            }
+        }
+
+        // Load cached slides on page load
+        loadCachedSlides();
+
         // DOM elements
         const captureForm = document.getElementById('captureForm');
         const captureBtn = document.getElementById('captureBtn');
@@ -485,8 +534,9 @@
                     throw new Error(data.message || 'Failed to capture slides');
                 }
 
-                // Store captured slides
+                // Store captured slides in memory and cache
                 capturedSlides = data.slides;
+                sessionStorage.setItem('capturedSlides', JSON.stringify(data));
 
                 // Show stats
                 document.getElementById('totalSlides').textContent = data.stats.totalSlides;
@@ -537,6 +587,7 @@
         // Recapture
         recaptureBtn.addEventListener('click', () => {
             capturedSlides = null;
+            sessionStorage.removeItem('capturedSlides'); // Clear cache
             slidesPreview.classList.remove('active');
             stage2Card.classList.remove('active');
             finalPreview.classList.remove('active');

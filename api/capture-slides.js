@@ -90,24 +90,41 @@ async function captureSlides(templateUrl) {
 
         await wait(300); // Small buffer after content check
 
-        // Take screenshot as JPEG to reduce memory (much smaller than PNG)
+        // Take screenshot with retry logic for blank slides
         let screenshot;
-        try {
-            screenshot = await page.screenshot({
-                clip: SLIDE_CROP,
-                encoding: 'base64',
-                type: 'jpeg',
-                quality: 90
-            });
-        } catch (screenshotError) {
-            console.log(`   ⚠️  Screenshot failed, retrying...`);
-            await wait(500);
-            screenshot = await page.screenshot({
-                clip: SLIDE_CROP,
-                encoding: 'base64',
-                type: 'jpeg',
-                quality: 90
-            });
+        let retryCount = 0;
+        const maxRetries = 2;
+
+        while (retryCount <= maxRetries) {
+            try {
+                screenshot = await page.screenshot({
+                    clip: SLIDE_CROP,
+                    encoding: 'base64',
+                    type: 'jpeg',
+                    quality: 90
+                });
+
+                // Check if screenshot is suspiciously small (likely blank)
+                const imageSize = screenshot.length;
+                const isLikelyBlank = imageSize < 5000; // Very small base64 = likely blank/white
+
+                if (isLikelyBlank && retryCount < maxRetries) {
+                    console.log(`   ⚠️  Slide ${i} appears blank (${imageSize} bytes), retrying...`);
+                    retryCount++;
+                    await wait(2000); // Wait longer before retry
+                    continue;
+                }
+
+                break; // Screenshot successful
+            } catch (screenshotError) {
+                if (retryCount < maxRetries) {
+                    console.log(`   ⚠️  Screenshot failed, retrying...`);
+                    retryCount++;
+                    await wait(1000);
+                } else {
+                    throw screenshotError;
+                }
+            }
         }
 
         // Simple brightness detection without browser overhead
