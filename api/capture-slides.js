@@ -70,7 +70,7 @@ async function captureSlides(templateUrl) {
             }
         }, i);
 
-        await wait(600); // Wait for slide transition
+        await wait(1500); // Wait for slide transition and rendering
 
         // Take screenshot as JPEG to reduce memory (much smaller than PNG)
         let screenshot;
