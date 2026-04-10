@@ -151,19 +151,23 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
 
         await wait(500); // Extra buffer
 
-        // Take screenshot (PNG for quality) with retry logic
+        // Take screenshot as JPEG to reduce memory (much smaller than PNG)
         let screenshot;
         try {
             screenshot = await page.screenshot({
                 clip: SLIDE_CROP,
-                encoding: 'base64'
+                encoding: 'base64',
+                type: 'jpeg',
+                quality: 90
             });
         } catch (screenshotError) {
             console.log(`   ⚠️  Screenshot failed, retrying after 2s...`);
             await wait(2000);
             screenshot = await page.screenshot({
                 clip: SLIDE_CROP,
-                encoding: 'base64'
+                encoding: 'base64',
+                type: 'jpeg',
+                quality: 90
             });
         }
 
@@ -177,6 +181,11 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
         });
 
         console.log(`   ✅ Slide ${i}: ${brightness.toUpperCase()}`);
+
+        // Force garbage collection hint
+        if (global.gc && i % 3 === 0) {
+            global.gc();
+        }
     }
 
     console.log('✅ All slides captured\n');
@@ -206,14 +215,14 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
             return new Promise((resolve) => {
                 const img = new Image();
                 img.onload = () => resolve({ img, brightness: slide.brightness });
-                img.src = 'data:image/png;base64,' + slide.data;
+                img.src = 'data:image/jpeg;base64,' + slide.data;
             });
         }));
 
         const balancedSlides = balanceSlides([...loadedSlides]);
 
-        // Create canvas at 2x resolution for quality
-        const scale = 2;
+        // Create canvas at 1.5x resolution (balance between quality and memory)
+        const scale = 1.5;
         const canvas = document.createElement('canvas');
         canvas.width = 1200 * scale;
         canvas.height = 630 * scale;
@@ -323,8 +332,8 @@ async function captureAndGenerate(templateUrl, heroSlide = 0, colorTheme = 'blac
 
         ctx.restore();
 
-        // Return as base64 with high quality
-        return canvas.toDataURL('image/jpeg', 0.95);
+        // Return as base64 with good quality (balanced for memory)
+        return canvas.toDataURL('image/jpeg', 0.90);
     }, slides, heroSlide, colorTheme);
 
     console.log('✅ Preview generated\n');
