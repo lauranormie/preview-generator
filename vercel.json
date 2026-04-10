@@ -4,11 +4,5 @@
     "api/capture-slides.js": {
       "maxDuration": 120
     }
-  },
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/public/index.html"
-    }
-  ]
+  }
 }
