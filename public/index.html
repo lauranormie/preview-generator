@@ -499,6 +499,16 @@
                     slidesGrid.appendChild(thumb);
                 });
 
+                // Populate hero slide dropdown dynamically
+                const heroSlideSelect = document.getElementById('heroSlide');
+                heroSlideSelect.innerHTML = '';
+                data.slides.forEach((slide, idx) => {
+                    const option = document.createElement('option');
+                    option.value = idx;
+                    option.textContent = idx === 0 ? `Slide 1 (First)` : `Slide ${idx + 1}`;
+                    heroSlideSelect.appendChild(option);
+                });
+
                 captureLoading.classList.remove('active');
                 slidesPreview.classList.add('active');
 
