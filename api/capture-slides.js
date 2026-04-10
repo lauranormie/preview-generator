@@ -72,6 +72,24 @@ async function captureSlides(templateUrl) {
 
         await wait(1500); // Wait for slide transition and rendering
 
+        // Wait for iframe content to be visible
+        await page.waitForFunction(
+            () => {
+                const iframe = document.querySelector('iframe');
+                if (!iframe) return false;
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const body = iframeDoc.body;
+                    return body && body.innerHTML.length > 100;
+                } catch (e) {
+                    return false;
+                }
+            },
+            { timeout: 5000 }
+        ).catch(() => console.log(`   ⚠️  Slide ${i} content check timed out, capturing anyway`));
+
+        await wait(300); // Small buffer after content check
+
         // Take screenshot as JPEG to reduce memory (much smaller than PNG)
         let screenshot;
         try {
