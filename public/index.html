@@ -776,127 +776,64 @@
             ctx.rect(0, 0, 1200, 630);
             ctx.clip();
 
-            // Exact Figma hierarchy
-            // Isometric_stack container -> Groups -> Frames -> Images
+            // Create continuous isometric grid of slides
+            // Slides arranged in diagonal rows like your reference image
 
-            // Parent container: Isometric_stack
-            // Adjusted position to center pattern on 1200x630 canvas
-            const isometricStack = {
-                x: -600,
-                y: -100,
-                rotation: 2.45
-            };
+            const tileWidth = 276;
+            const tileHeight = 155;
 
-            // 3 Groups within Isometric_stack
-            const groups = [
-                { x: 43.82, y: 53.68 },
-                { x: 933.67, y: 229.74 },
-                { x: 1826.18, y: 405.91 }
-            ];
+            // Isometric spacing (distance between tile centers)
+            const isoSpacingX = 320;  // Horizontal spacing
+            const isoSpacingY = 180;  // Vertical spacing
 
-            // Frame offset within each Group (consistent across all groups)
-            const frameOffset = { x: 119.4, y: 264 };
+            // Isometric transform angles
+            const rotationAngle = -17.5;  // Overall rotation for diagonal layout
+            const skewAngle = -28;        // Skew for 3D perspective
+            const scaleY = 0.88;          // Vertical compression
 
-            const groupRotation = -19.94;
-
-            // Transform matrix for Frames
-            const frameMatrix = {
-                a: 0.98,
-                b: 0.19,
-                c: -0.63,
-                d: 0.77
-            };
-
-            // 10 image positions within each Frame (exact from Figma)
-            const imagePositions = [
-                { x: 334.9, y: -11.93, w: 276.15, h: 154.4 },
-                { x: 632.12, y: 45.33, w: 276.22, h: 154.71 },
-                { x: 929.53, y: 102.59, w: 276.19, h: 154.73 },
-                { x: 120.5, y: 261.75, w: 276.22, h: 154.71 },
-                { x: 417.49, y: 319.01, w: 276.27, h: 155.39 },
-                { x: 715.35, y: 376.27, w: 276.24, h: 154.7 },
-                { x: 826.35, y: 239.82, w: 276.39, h: 155.31 },
-                { x: 306.76, y: 455.45, w: 276.25, h: 154.34 },
-                { x: 529.35, y: 182.56, w: 276.32, h: 154.66 },
-                { x: 231.46, y: 125.3, w: 276.24, h: 155.4 }
-            ];
-
-            // Start with Isometric_stack container
             ctx.save();
-            ctx.translate(isometricStack.x, isometricStack.y);
-            ctx.rotate((isometricStack.rotation * Math.PI) / 180);
 
-            // Strategic positioning to avoid overlap while filling canvas
-            // Wider spacing between groups to prevent stacking
-            const groupRepetitions = [
-                { offsetX: 0, offsetY: 0 },          // Center
-                { offsetX: 2800, offsetY: 100 },     // Right
-                { offsetX: -2400, offsetY: -200 },   // Left
-                { offsetX: 200, offsetY: 1100 },     // Bottom
-                { offsetX: -200, offsetY: -1100 },   // Top
-                { offsetX: 2600, offsetY: -900 },    // Top-right
-                { offsetX: -2200, offsetY: 1000 },   // Bottom-left
-                { offsetX: 1400, offsetY: 500 }      // Mid-right
-            ];
+            // Center the grid on canvas
+            ctx.translate(600, 315);
+            ctx.rotate((rotationAngle * Math.PI) / 180);
 
-            for (let repIdx = 0; repIdx < groupRepetitions.length; repIdx++) {
-                const rep = groupRepetitions[repIdx];
+            // Create grid covering the canvas (with extra for rotation)
+            let slideIdx = 0;
 
-                // Draw each of the 3 Groups
-                for (let groupIdx = 0; groupIdx < groups.length; groupIdx++) {
-                    const group = groups[groupIdx];
-
+            // Draw tiles in diagonal rows
+            for (let row = -3; row < 6; row++) {
+                for (let col = -4; col < 8; col++) {
                     ctx.save();
 
-                    // Position Group within Isometric_stack with repetition offset
-                    ctx.translate(group.x + rep.offsetX, group.y + rep.offsetY);
-                    ctx.rotate((groupRotation * Math.PI) / 180);
+                    // Position tile in isometric grid
+                    const x = col * isoSpacingX;
+                    const y = row * isoSpacingY;
 
-                    // Move to Frame position within Group
-                    ctx.translate(frameOffset.x, frameOffset.y);
+                    ctx.translate(x, y);
+                    ctx.scale(1, scaleY);
+                    ctx.transform(1, 0, Math.tan((skewAngle * Math.PI) / 180), 1, 0, 0);
 
-                    // Draw 10 images - each with transform matrix applied
-                    let slideIdx = (repIdx * 9 + groupIdx * 3) % balancedSlides.length;
-                    for (let i = 0; i < imagePositions.length; i++) {
-                        if (slideIdx >= balancedSlides.length) slideIdx = 0;
+                    ctx.globalAlpha = 0.65;
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
 
-                        const img = imagePositions[i];
+                    // Draw the slide
+                    ctx.drawImage(
+                        balancedSlides[slideIdx].img,
+                        -tileWidth / 2,  // Center the tile
+                        -tileHeight / 2,
+                        tileWidth,
+                        tileHeight
+                    );
 
-                        ctx.save();
+                    ctx.restore();
 
-                        // Position and apply transform for this image
-                        ctx.translate(img.x, img.y);
-                        ctx.transform(
-                            frameMatrix.a,
-                            frameMatrix.b,
-                            frameMatrix.c,
-                            frameMatrix.d,
-                            0,
-                            0
-                        );
-
-                        ctx.globalAlpha = 0.7;  // Visible background
-                        ctx.imageSmoothingEnabled = true;
-                        ctx.imageSmoothingQuality = 'high';
-
-                        // Draw image at origin (since we've already translated to position)
-                        ctx.drawImage(
-                            balancedSlides[slideIdx].img,
-                            0,
-                            0,
-                            img.w,
-                            img.h
-                        );
-
-                        ctx.restore();
-                        slideIdx = (slideIdx + 1) % balancedSlides.length;
-                    }
-
-                    ctx.restore(); // Group
+                    // Cycle through available slides
+                    slideIdx = (slideIdx + 1) % balancedSlides.length;
                 }
             }
 
-            ctx.restore(); // Isometric_stack
+            ctx.restore();
 
             // Add very subtle gradient overlay from bottom for depth
             ctx.save();
