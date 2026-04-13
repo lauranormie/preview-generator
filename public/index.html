@@ -820,57 +820,69 @@
             ctx.translate(isometricStack.x, isometricStack.y);
             ctx.rotate((isometricStack.rotation * Math.PI) / 180);
 
-            // Draw each of the 3 Groups
-            for (let groupIdx = 0; groupIdx < groups.length; groupIdx++) {
-                const group = groups[groupIdx];
+            // Draw groups multiple times to create denser coverage
+            // This replicates the pattern across the canvas for better fill
+            const groupRepetitions = [
+                { offsetX: 0, offsetY: 0 },
+                { offsetX: 2700, offsetY: 500 },
+                { offsetX: -2700, offsetY: -500 }
+            ];
 
-                ctx.save();
+            for (let repIdx = 0; repIdx < groupRepetitions.length; repIdx++) {
+                const rep = groupRepetitions[repIdx];
 
-                // Position Group within Isometric_stack
-                ctx.translate(group.x, group.y);
-                ctx.rotate((groupRotation * Math.PI) / 180);
-
-                // Move to Frame position within Group
-                ctx.translate(frameOffset.x, frameOffset.y);
-
-                // Draw 10 images - each with transform matrix applied
-                let slideIdx = groupIdx * 3;
-                for (let i = 0; i < imagePositions.length; i++) {
-                    if (slideIdx >= balancedSlides.length) slideIdx = 0;
-
-                    const img = imagePositions[i];
+                // Draw each of the 3 Groups
+                for (let groupIdx = 0; groupIdx < groups.length; groupIdx++) {
+                    const group = groups[groupIdx];
 
                     ctx.save();
 
-                    // Position and apply transform for this image
-                    ctx.translate(img.x, img.y);
-                    ctx.transform(
-                        frameMatrix.a,
-                        frameMatrix.b,
-                        frameMatrix.c,
-                        frameMatrix.d,
-                        0,
-                        0
-                    );
+                    // Position Group within Isometric_stack with repetition offset
+                    ctx.translate(group.x + rep.offsetX, group.y + rep.offsetY);
+                    ctx.rotate((groupRotation * Math.PI) / 180);
 
-                    ctx.globalAlpha = 0.8;
-                    ctx.imageSmoothingEnabled = true;
-                    ctx.imageSmoothingQuality = 'high';
+                    // Move to Frame position within Group
+                    ctx.translate(frameOffset.x, frameOffset.y);
 
-                    // Draw image at origin (since we've already translated to position)
-                    ctx.drawImage(
-                        balancedSlides[slideIdx].img,
-                        0,
-                        0,
-                        img.w,
-                        img.h
-                    );
+                    // Draw 10 images - each with transform matrix applied
+                    let slideIdx = (repIdx * 9 + groupIdx * 3) % balancedSlides.length;
+                    for (let i = 0; i < imagePositions.length; i++) {
+                        if (slideIdx >= balancedSlides.length) slideIdx = 0;
 
-                    ctx.restore();
-                    slideIdx = (slideIdx + 1) % balancedSlides.length;
+                        const img = imagePositions[i];
+
+                        ctx.save();
+
+                        // Position and apply transform for this image
+                        ctx.translate(img.x, img.y);
+                        ctx.transform(
+                            frameMatrix.a,
+                            frameMatrix.b,
+                            frameMatrix.c,
+                            frameMatrix.d,
+                            0,
+                            0
+                        );
+
+                        ctx.globalAlpha = 0.75;  // Slightly lower for more depth
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+
+                        // Draw image at origin (since we've already translated to position)
+                        ctx.drawImage(
+                            balancedSlides[slideIdx].img,
+                            0,
+                            0,
+                            img.w,
+                            img.h
+                        );
+
+                        ctx.restore();
+                        slideIdx = (slideIdx + 1) % balancedSlides.length;
+                    }
+
+                    ctx.restore(); // Group
                 }
-
-                ctx.restore(); // Group
             }
 
             ctx.restore(); // Isometric_stack
