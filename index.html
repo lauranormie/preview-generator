@@ -799,7 +799,8 @@
 
             ctx.save();
             // Position the entire background pattern (Figma: left -1449, top -350)
-            ctx.translate(-1449, -350);
+            // Offset slightly to prevent rendering at exact edges
+            ctx.translate(-1449 + 5, -350 + 5);
             ctx.rotate((outerRotation * Math.PI) / 180);
 
             // Draw 3 repeating groups
