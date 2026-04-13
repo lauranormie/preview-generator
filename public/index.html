@@ -798,23 +798,22 @@
             ];
 
             ctx.save();
-            // Center the pattern to fill the canvas
+            // Center the pattern and spread it wider to create radiating effect
             ctx.translate(600, 315);
             ctx.rotate((outerRotation * Math.PI) / 180);
 
-            // Create a dense grid filling the entire canvas
-            // Calculate how many groups we need to fill 1200x630
+            // Calculate group dimensions
             const groupWidth = (tileWidth + tileGapX) * 3;
             const groupHeight = (tileHeight + tileGapY) * 3;
 
-            // Draw groups in a grid pattern to fill the canvas
-            for (let row = -1; row < 3; row++) {
-                for (let col = -2; col < 4; col++) {
+            // Draw groups in a wider spread pattern for radiating effect
+            for (let row = -2; row < 4; row++) {
+                for (let col = -3; col < 5; col++) {
                     ctx.save();
 
-                    // Position this group in the grid
-                    const offsetX = col * groupWidth * 0.7;  // Overlap groups slightly
-                    const offsetY = row * groupHeight * 0.5;
+                    // Spread groups wider for more visible radiating effect
+                    const offsetX = col * groupWidth * 1.0;  // Wider horizontal spread
+                    const offsetY = row * groupHeight * 0.7;  // More vertical spread
                     ctx.translate(offsetX, offsetY);
 
                     // Apply inner transformations
@@ -823,7 +822,7 @@
                     ctx.transform(1, 0, Math.tan((skewX * Math.PI) / 180), 1, 0, 0);
 
                     // Create 3x3 grid of slides
-                    let slideIdx = ((row + 2) * 6 + (col + 2)) % balancedSlides.length;
+                    let slideIdx = ((row + 3) * 8 + (col + 3)) % balancedSlides.length;
                     for (let tileRow = 0; tileRow < 3; tileRow++) {
                         for (let tileCol = 0; tileCol < 3; tileCol++) {
                             if (slideIdx >= balancedSlides.length) slideIdx = 0;
@@ -832,7 +831,7 @@
                             const y = tileRow * (tileHeight + tileGapY);
 
                             ctx.save();
-                            ctx.globalAlpha = 0.4;  // Lower opacity for subtler background
+                            ctx.globalAlpha = 0.7;  // Much more visible like Figma
                             ctx.imageSmoothingEnabled = true;
                             ctx.imageSmoothingQuality = 'high';
 
@@ -858,7 +857,7 @@
             // Add subtle gradient overlay from bottom for depth
             ctx.save();
             // Simple vertical gradient from bottom up
-            const gradient = ctx.createLinearGradient(0, 630, 0, 200);
+            const gradient = ctx.createLinearGradient(0, 630, 0, 100);
 
             // Convert hex to rgba for transparency
             let transparentColor;
@@ -875,10 +874,9 @@
                 transparentColor = config.bg.replace(')', ', 0)').replace('rgb', 'rgba');
             }
 
-            // Gradient from solid at bottom to transparent at top
+            // Lighter gradient to preserve background visibility
             gradient.addColorStop(0, config.bg);           // Solid at bottom
-            gradient.addColorStop(0.4, config.bg);         // Solid until 40% up
-            gradient.addColorStop(1, transparentColor);    // Fully transparent at top
+            gradient.addColorStop(0.6, transparentColor);  // Fade out more quickly to show background
 
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, 1200, 630);  // Fill entire canvas
@@ -907,24 +905,12 @@
                 ctx.closePath();
             }
 
-            // Draw layered shadows (Figma: 0px 94px 100px + 0px 0px 3px)
-            // Large soft shadow
+            // Draw large soft shadow (only downward, not around all edges)
             ctx.save();
             ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
             ctx.shadowBlur = 100;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 94;
-            roundRect(ctx, heroX, heroY, heroWidth, heroHeight, borderRadius);
-            ctx.fillStyle = '#000';
-            ctx.fill();
-            ctx.restore();
-
-            // Tight edge shadow
-            ctx.save();
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
-            ctx.shadowBlur = 3;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 0;
             roundRect(ctx, heroX, heroY, heroWidth, heroHeight, borderRadius);
             ctx.fillStyle = '#000';
             ctx.fill();
@@ -937,26 +923,7 @@
             ctx.drawImage(heroSlide, heroX, heroY, heroWidth, heroHeight);
             ctx.restore();
 
-            // Add inner shadow/highlight (Figma: inset 0px 0px 3px rgba(255,255,255,0.1))
-            // Canvas doesn't support inset shadows, so we'll draw a subtle border glow
-            ctx.save();
-            ctx.globalAlpha = 0.1;
-            ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
-            ctx.lineWidth = 1;
-            roundRect(ctx, heroX + 0.5, heroY + 0.5, heroWidth - 1, heroHeight - 1, borderRadius);
-            ctx.stroke();
-            ctx.restore();
-
             // Restore clipping region
-            ctx.restore();
-
-            // Draw solid rectangles to completely cover dark edges
-            ctx.save();
-            ctx.fillStyle = config.bg;
-            // Top edge
-            ctx.fillRect(0, 0, 1200, 3);
-            // Left edge
-            ctx.fillRect(0, 0, 3, 630);
             ctx.restore();
         }
 
