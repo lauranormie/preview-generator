@@ -507,6 +507,7 @@
             btn.textContent = '⏳ Retrying...';
 
             try {
+                // Note: Vercel Hobby plan has 10s timeout, retry may fail for slow slides
                 const response = await fetch('/api/capture-slides', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -531,8 +532,10 @@
                     renderSlides(capturedSlides);
 
                     console.log(`Slide ${slideIndex + 1} recaptured successfully`);
+                    alert(`✅ Slide ${slideIndex + 1} recaptured successfully!`);
                 } else {
-                    throw new Error('Failed to recapture slide');
+                    const errorMsg = data.error || 'Unknown error';
+                    throw new Error(`API returned: ${errorMsg}`);
                 }
             } catch (err) {
                 console.error(err);
