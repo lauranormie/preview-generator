@@ -776,60 +776,52 @@
             ctx.rect(0, 0, 1200, 630);
             ctx.clip();
 
-            // Create continuous isometric grid of slides
-            // Slides arranged in diagonal rows like your reference image
-
+            // Simple grid layout with perspective transform (like reference image)
             const tileWidth = 276;
             const tileHeight = 155;
+            const tileGap = 20;  // Gap between tiles
 
-            // Isometric spacing (distance between tile centers)
-            const isoSpacingX = 320;  // Horizontal spacing
-            const isoSpacingY = 180;  // Vertical spacing
+            // Grid configuration
+            const cols = 10;
+            const rows = 6;
 
-            // Isometric transform angles
-            const rotationAngle = -17.5;  // Overall rotation for diagonal layout
-            const skewAngle = -28;        // Skew for 3D perspective
-            const scaleY = 0.88;          // Vertical compression
-
+            // Perspective transform for depth/slant effect
             ctx.save();
+            ctx.translate(600, 315);  // Center point
+            ctx.rotate((2 * Math.PI) / 180);  // Slight rotation
 
-            // Center the grid on canvas
-            ctx.translate(600, 315);
-            ctx.rotate((rotationAngle * Math.PI) / 180);
+            // Apply perspective transform similar to reference image
+            ctx.transform(1, 0.15, -0.6, 0.85, 0, 0);
 
-            // Create grid covering the canvas (with extra for rotation)
+            // Center the grid
+            const gridWidth = (tileWidth + tileGap) * cols;
+            const gridHeight = (tileHeight + tileGap) * rows;
+            ctx.translate(-gridWidth / 2, -gridHeight / 2);
+
+            // Draw grid of slides
             let slideIdx = 0;
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    if (slideIdx >= balancedSlides.length) slideIdx = 0;
 
-            // Draw tiles in diagonal rows
-            for (let row = -3; row < 6; row++) {
-                for (let col = -4; col < 8; col++) {
+                    const x = col * (tileWidth + tileGap);
+                    const y = row * (tileHeight + tileGap);
+
                     ctx.save();
-
-                    // Position tile in isometric grid
-                    const x = col * isoSpacingX;
-                    const y = row * isoSpacingY;
-
-                    ctx.translate(x, y);
-                    ctx.scale(1, scaleY);
-                    ctx.transform(1, 0, Math.tan((skewAngle * Math.PI) / 180), 1, 0, 0);
-
-                    ctx.globalAlpha = 0.65;
+                    ctx.globalAlpha = 0.7;
                     ctx.imageSmoothingEnabled = true;
                     ctx.imageSmoothingQuality = 'high';
 
-                    // Draw the slide
                     ctx.drawImage(
                         balancedSlides[slideIdx].img,
-                        -tileWidth / 2,  // Center the tile
-                        -tileHeight / 2,
+                        x,
+                        y,
                         tileWidth,
                         tileHeight
                     );
 
                     ctx.restore();
-
-                    // Cycle through available slides
-                    slideIdx = (slideIdx + 1) % balancedSlides.length;
+                    slideIdx++;
                 }
             }
 
