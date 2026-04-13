@@ -542,7 +542,8 @@
                     console.log(`Slide ${slideIndex + 1} recaptured successfully`);
                     alert(`✅ Slide ${slideIndex + 1} recaptured successfully!`);
                 } else {
-                    const errorMsg = data.error || `No slides returned (status: ${response.status})`;
+                    // Show detailed error message from API if available
+                    const errorMsg = data.message || data.error || `No slides returned (status: ${response.status})`;
                     console.error('Retry failed:', { response, data });
                     throw new Error(errorMsg);
                 }
