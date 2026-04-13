@@ -507,7 +507,6 @@
             btn.textContent = '⏳ Retrying...';
 
             try {
-                // Note: Vercel Hobby plan has 10s timeout, retry may fail for slow slides
                 const response = await fetch('/api/capture-slides', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -517,7 +516,16 @@
                     }),
                 });
 
-                const data = await response.json();
+                console.log('Retry response status:', response.status);
+
+                let data;
+                try {
+                    data = await response.json();
+                    console.log('Retry response data:', data);
+                } catch (parseError) {
+                    console.error('JSON parse error:', parseError);
+                    throw new Error(`Failed to parse API response: ${parseError.message}`);
+                }
 
                 if (response.ok && data.slides && data.slides.length > 0) {
                     // Update the slide in memory
@@ -534,8 +542,9 @@
                     console.log(`Slide ${slideIndex + 1} recaptured successfully`);
                     alert(`✅ Slide ${slideIndex + 1} recaptured successfully!`);
                 } else {
-                    const errorMsg = data.error || 'Unknown error';
-                    throw new Error(`API returned: ${errorMsg}`);
+                    const errorMsg = data.error || `No slides returned (status: ${response.status})`;
+                    console.error('Retry failed:', { response, data });
+                    throw new Error(errorMsg);
                 }
             } catch (err) {
                 console.error(err);
