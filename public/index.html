@@ -798,71 +798,67 @@
             ];
 
             ctx.save();
-            // Adjust position to show more slides in view (less offset to left)
-            ctx.translate(-800, -200);
+            // Center the pattern to fill the canvas
+            ctx.translate(600, 315);
             ctx.rotate((outerRotation * Math.PI) / 180);
 
-            // Draw more groups to fill the background with visible slides
-            // Pattern: create multiple diagonal rows of slide groups
-            for (let groupIdx = 0; groupIdx < 6; groupIdx++) {
-                ctx.save();
+            // Create a dense grid filling the entire canvas
+            // Calculate how many groups we need to fill 1200x630
+            const groupWidth = (tileWidth + tileGapX) * 3;
+            const groupHeight = (tileHeight + tileGapY) * 3;
 
-                // Position groups in a more visible diagonal pattern
-                const offsetX = groupIdx * 450;  // Closer spacing horizontally
-                const offsetY = groupIdx * 120;  // Closer spacing vertically
-                ctx.translate(offsetX, offsetY);
+            // Draw groups in a grid pattern to fill the canvas
+            for (let row = -1; row < 3; row++) {
+                for (let col = -2; col < 4; col++) {
+                    ctx.save();
 
-                // Apply inner transformations
-                ctx.rotate((innerRotation * Math.PI) / 180);
-                ctx.scale(1, scaleY);
-                ctx.transform(1, 0, Math.tan((skewX * Math.PI) / 180), 1, 0, 0);
+                    // Position this group in the grid
+                    const offsetX = col * groupWidth * 0.7;  // Overlap groups slightly
+                    const offsetY = row * groupHeight * 0.5;
+                    ctx.translate(offsetX, offsetY);
 
-                // Create 3x3 grid with exact tile positions
-                let slideIdx = (groupIdx * 9) % balancedSlides.length;
-                for (let row = 0; row < 3; row++) {
-                    for (let col = 0; col < 3; col++) {
-                        if (slideIdx >= balancedSlides.length) slideIdx = 0;
+                    // Apply inner transformations
+                    ctx.rotate((innerRotation * Math.PI) / 180);
+                    ctx.scale(1, scaleY);
+                    ctx.transform(1, 0, Math.tan((skewX * Math.PI) / 180), 1, 0, 0);
 
-                        const x = col * (tileWidth + tileGapX);
-                        const y = row * (tileHeight + tileGapY);
+                    // Create 3x3 grid of slides
+                    let slideIdx = ((row + 2) * 6 + (col + 2)) % balancedSlides.length;
+                    for (let tileRow = 0; tileRow < 3; tileRow++) {
+                        for (let tileCol = 0; tileCol < 3; tileCol++) {
+                            if (slideIdx >= balancedSlides.length) slideIdx = 0;
 
-                        ctx.save();
-                        // Higher opacity for more visible background
-                        ctx.globalAlpha = 0.6;
-                        ctx.imageSmoothingEnabled = true;
-                        ctx.imageSmoothingQuality = 'high';
+                            const x = tileCol * (tileWidth + tileGapX);
+                            const y = tileRow * (tileHeight + tileGapY);
 
-                        ctx.drawImage(
-                            balancedSlides[slideIdx].img,
-                            x,
-                            y,
-                            tileWidth,
-                            tileHeight
-                        );
+                            ctx.save();
+                            ctx.globalAlpha = 0.4;  // Lower opacity for subtler background
+                            ctx.imageSmoothingEnabled = true;
+                            ctx.imageSmoothingQuality = 'high';
 
-                        ctx.restore();
-                        slideIdx++;
+                            ctx.drawImage(
+                                balancedSlides[slideIdx].img,
+                                x,
+                                y,
+                                tileWidth,
+                                tileHeight
+                            );
+
+                            ctx.restore();
+                            slideIdx++;
+                        }
                     }
-                }
 
-                ctx.restore();
+                    ctx.restore();
+                }
             }
 
             ctx.restore();
 
-            // Add gradient overlay to create depth (fade from top to bottom)
+            // Add subtle gradient overlay from bottom for depth
             ctx.save();
-            ctx.translate(600, 550);
-            ctx.rotate((10.17 * Math.PI) / 180);
-            ctx.scale(1, 0.82);
-            ctx.transform(1, 0, Math.tan((-34.7 * Math.PI) / 180), 1, 0, 0);
-
-            // Larger gradient to cover more area
-            const gradientWidth = 2200;
-            const gradientHeight = 1000;
-            const gradient = ctx.createLinearGradient(0, -gradientHeight / 2, 0, gradientHeight / 2);
-            // Fade starts at top
-            gradient.addColorStop(0, config.bg);
+            // Simple vertical gradient from bottom up
+            const gradient = ctx.createLinearGradient(0, 630, 0, 200);
 
             // Convert hex to rgba for transparency
             let transparentColor;
@@ -878,12 +874,14 @@
             } else {
                 transparentColor = config.bg.replace(')', ', 0)').replace('rgb', 'rgba');
             }
-            // Fade more gradually - stay solid longer to show more slides
-            gradient.addColorStop(0.3, config.bg);  // Solid until 30%
-            gradient.addColorStop(0.7, transparentColor);  // Fully transparent at 70%
+
+            // Gradient from solid at bottom to transparent at top
+            gradient.addColorStop(0, config.bg);           // Solid at bottom
+            gradient.addColorStop(0.4, config.bg);         // Solid until 40% up
+            gradient.addColorStop(1, transparentColor);    // Fully transparent at top
 
             ctx.fillStyle = gradient;
-            ctx.fillRect(-gradientWidth / 2, -gradientHeight / 2, gradientWidth, gradientHeight);
+            ctx.fillRect(0, 0, 1200, 630);  // Fill entire canvas
             ctx.restore();
 
             // Add hero image with rounded corners and layered shadows (matching Figma)
