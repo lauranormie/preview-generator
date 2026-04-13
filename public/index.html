@@ -827,17 +827,20 @@
             ctx.rotate((isometricStack.rotation * Math.PI) / 180);
 
             // Draw groups multiple times to fill entire canvas
-            // Adjusted offsets for better coverage on 1200x630 canvas
+            // More spread-out positions to avoid overlap and fill gaps
             const groupRepetitions = [
-                { offsetX: 0, offsetY: 0 },        // Center
-                { offsetX: 1800, offsetY: 0 },     // Right
-                { offsetX: -1800, offsetY: 0 },    // Left
-                { offsetX: 0, offsetY: 800 },      // Bottom
-                { offsetX: 0, offsetY: -800 },     // Top
-                { offsetX: 1800, offsetY: -800 },  // Top-right
-                { offsetX: -1800, offsetY: -800 }, // Top-left
-                { offsetX: 1800, offsetY: 800 },   // Bottom-right
-                { offsetX: -1800, offsetY: 800 }   // Bottom-left
+                { offsetX: 0, offsetY: 0 },         // Center
+                { offsetX: 2200, offsetY: 0 },      // Right
+                { offsetX: 3600, offsetY: 200 },    // Far right (fill gap)
+                { offsetX: -1800, offsetY: 0 },     // Left
+                { offsetX: 0, offsetY: 900 },       // Bottom
+                { offsetX: 0, offsetY: -900 },      // Top
+                { offsetX: 2200, offsetY: -700 },   // Top-right
+                { offsetX: -1800, offsetY: -900 },  // Top-left
+                { offsetX: 2400, offsetY: 900 },    // Bottom-right
+                { offsetX: -1800, offsetY: 900 },   // Bottom-left
+                { offsetX: 1100, offsetY: -450 },   // Mid top-right
+                { offsetX: 1100, offsetY: 450 }     // Mid bottom-right
             ];
 
             for (let repIdx = 0; repIdx < groupRepetitions.length; repIdx++) {
