@@ -10,6 +10,11 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
     let browser = null;
 
     try {
+        // Small delay to ensure any previous browser instances are fully closed
+        if (singleSlideNumber) {
+            await wait(1000);
+        }
+
         browser = await puppeteer.launch({
             args: [
                 ...chromium.args,
@@ -40,11 +45,11 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
     page.setDefaultTimeout(30000);
 
     console.log('📂 Loading template:', templateUrl);
-    await page.goto(templateUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto(templateUrl, { waitUntil: 'networkidle2', timeout: 30000 });
 
     console.log('⏳ Waiting for page to be ready...');
-    // Simple fixed wait - more reliable than complex checks
-    await wait(10000); // 10 second fixed wait for everything to load
+    // Wait for everything to fully load
+    await wait(3000);
 
     console.log('✅ Page loaded, detecting slide count...');
     const slideCount = await page.evaluate(() => {
@@ -78,25 +83,8 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
             }
         }, i);
 
-        await wait(1500); // Wait for slide transition and rendering
-
-        // Wait for iframe content to be visible
-        await page.waitForFunction(
-            () => {
-                const iframe = document.querySelector('iframe');
-                if (!iframe) return false;
-                try {
-                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                    const body = iframeDoc.body;
-                    return body && body.innerHTML.length > 100;
-                } catch (e) {
-                    return false;
-                }
-            },
-            { timeout: 5000 }
-        ).catch(() => console.log(`   ⚠️  Slide ${i} content check timed out, capturing anyway`));
-
-        await wait(300); // Small buffer after content check
+        // Simple wait for slide transition - more reliable than iframe checks
+        await wait(2500);
 
         // Check if page is still connected before attempting screenshot
         if (page.isClosed()) {
@@ -176,6 +164,12 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
 
     } catch (error) {
         console.error('❌ Error during capture:', error);
+
+        // Provide helpful message for common errors
+        if (error.message.includes('ETXTBSY')) {
+            throw new Error('Chrome executable is busy. Please wait a few seconds and try again.');
+        }
+
         throw error;
     } finally {
         // Always clean up browser
@@ -183,6 +177,8 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
             try {
                 await browser.close();
                 console.log('🧹 Browser closed');
+                // Extra delay after close to ensure cleanup completes
+                await wait(500);
             } catch (closeError) {
                 console.error('Warning: Error closing browser:', closeError);
             }
