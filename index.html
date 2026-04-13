@@ -898,7 +898,14 @@
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 50; // Match blur to prevent upward bleed
             roundRect(ctx, heroX, heroY, heroWidth, heroHeight, borderRadius);
-            ctx.fillStyle = '#000';
+            ctx.fillStyle = config.bg;  // Use theme background color for shadow rectangle
+            ctx.fill();
+            ctx.restore();
+
+            // Draw background rectangle for hero slide (prevents transparency issues)
+            ctx.save();
+            roundRect(ctx, heroX, heroY, heroWidth, heroHeight, borderRadius);
+            ctx.fillStyle = config.bg;  // Match theme background
             ctx.fill();
             ctx.restore();
 
