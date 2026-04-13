@@ -830,21 +830,10 @@
                 ctx.translate(group.x, group.y);
                 ctx.rotate((groupRotation * Math.PI) / 180);
 
-                // Position Frame within Group (relative offset)
-                ctx.save();
+                // Move to Frame position within Group
                 ctx.translate(frameOffset.x, frameOffset.y);
 
-                // Apply Frame transform matrix
-                ctx.transform(
-                    frameMatrix.a,
-                    frameMatrix.b,
-                    frameMatrix.c,
-                    frameMatrix.d,
-                    0,
-                    0
-                );
-
-                // Draw 10 images in this Frame
+                // Draw 10 images - each with transform matrix applied
                 let slideIdx = groupIdx * 3;
                 for (let i = 0; i < imagePositions.length; i++) {
                     if (slideIdx >= balancedSlides.length) slideIdx = 0;
@@ -852,15 +841,27 @@
                     const img = imagePositions[i];
 
                     ctx.save();
-                    ctx.globalAlpha = 0.8;  // Much more visible
+
+                    // Position and apply transform for this image
+                    ctx.translate(img.x, img.y);
+                    ctx.transform(
+                        frameMatrix.a,
+                        frameMatrix.b,
+                        frameMatrix.c,
+                        frameMatrix.d,
+                        0,
+                        0
+                    );
+
+                    ctx.globalAlpha = 0.8;
                     ctx.imageSmoothingEnabled = true;
                     ctx.imageSmoothingQuality = 'high';
 
-                    // Images also have the transform matrix applied (already in Frame's context)
+                    // Draw image at origin (since we've already translated to position)
                     ctx.drawImage(
                         balancedSlides[slideIdx].img,
-                        img.x,
-                        img.y,
+                        0,
+                        0,
                         img.w,
                         img.h
                     );
@@ -869,7 +870,6 @@
                     slideIdx = (slideIdx + 1) % balancedSlides.length;
                 }
 
-                ctx.restore(); // Frame
                 ctx.restore(); // Group
             }
 
