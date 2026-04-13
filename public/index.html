@@ -798,17 +798,19 @@
             ];
 
             ctx.save();
-            // Position the entire background pattern (Figma: left -1449, top -350)
-            // Offset slightly to prevent rendering at exact edges
-            ctx.translate(-1449 + 5, -350 + 5);
+            // Adjust position to show more slides in view (less offset to left)
+            ctx.translate(-800, -200);
             ctx.rotate((outerRotation * Math.PI) / 180);
 
-            // Draw 3 repeating groups
-            for (let groupIdx = 0; groupIdx < 3; groupIdx++) {
+            // Draw more groups to fill the background with visible slides
+            // Pattern: create multiple diagonal rows of slide groups
+            for (let groupIdx = 0; groupIdx < 6; groupIdx++) {
                 ctx.save();
 
-                // Position this group
-                ctx.translate(innerOffsets[groupIdx].x, innerOffsets[groupIdx].y);
+                // Position groups in a more visible diagonal pattern
+                const offsetX = groupIdx * 450;  // Closer spacing horizontally
+                const offsetY = groupIdx * 120;  // Closer spacing vertically
+                ctx.translate(offsetX, offsetY);
 
                 // Apply inner transformations
                 ctx.rotate((innerRotation * Math.PI) / 180);
@@ -816,7 +818,7 @@
                 ctx.transform(1, 0, Math.tan((skewX * Math.PI) / 180), 1, 0, 0);
 
                 // Create 3x3 grid with exact tile positions
-                let slideIdx = groupIdx * 9;
+                let slideIdx = (groupIdx * 9) % balancedSlides.length;
                 for (let row = 0; row < 3; row++) {
                     for (let col = 0; col < 3; col++) {
                         if (slideIdx >= balancedSlides.length) slideIdx = 0;
@@ -825,7 +827,8 @@
                         const y = row * (tileHeight + tileGapY);
 
                         ctx.save();
-                        ctx.globalAlpha = 0.5;
+                        // Higher opacity for more visible background
+                        ctx.globalAlpha = 0.6;
                         ctx.imageSmoothingEnabled = true;
                         ctx.imageSmoothingQuality = 'high';
 
@@ -847,18 +850,18 @@
 
             ctx.restore();
 
-            // Add gradient overlay (exact Figma measurements)
-            // Figma: calc(50%-35.8px) = 564.2, calc(50%+233.31px) = 548.31
+            // Add gradient overlay to create depth (fade from top to bottom)
             ctx.save();
-            ctx.translate(564.2, 548.31);
+            ctx.translate(600, 550);
             ctx.rotate((10.17 * Math.PI) / 180);
             ctx.scale(1, 0.82);
             ctx.transform(1, 0, Math.tan((-34.7 * Math.PI) / 180), 1, 0, 0);
 
-            // Gradient rectangle: 1904.288 x 868.131, centered
-            const gradientWidth = 1904.288;
-            const gradientHeight = 868.131;
+            // Larger gradient to cover more area
+            const gradientWidth = 2200;
+            const gradientHeight = 1000;
             const gradient = ctx.createLinearGradient(0, -gradientHeight / 2, 0, gradientHeight / 2);
+            // Fade starts at top
             gradient.addColorStop(0, config.bg);
 
             // Convert hex to rgba for transparency
@@ -875,7 +878,9 @@
             } else {
                 transparentColor = config.bg.replace(')', ', 0)').replace('rgb', 'rgba');
             }
-            gradient.addColorStop(0.5, transparentColor);
+            // Fade more gradually - stay solid longer to show more slides
+            gradient.addColorStop(0.3, config.bg);  // Solid until 30%
+            gradient.addColorStop(0.7, transparentColor);  // Fully transparent at 70%
 
             ctx.fillStyle = gradient;
             ctx.fillRect(-gradientWidth / 2, -gradientHeight / 2, gradientWidth, gradientHeight);
