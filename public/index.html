@@ -852,7 +852,7 @@
                     const img = imagePositions[i];
 
                     ctx.save();
-                    ctx.globalAlpha = 0.6;
+                    ctx.globalAlpha = 0.8;  // Much more visible
                     ctx.imageSmoothingEnabled = true;
                     ctx.imageSmoothingQuality = 'high';
 
@@ -875,10 +875,10 @@
 
             ctx.restore(); // Isometric_stack
 
-            // Add subtle gradient overlay from bottom for depth
+            // Add very subtle gradient overlay from bottom for depth
             ctx.save();
-            // Simple vertical gradient from bottom up
-            const gradient = ctx.createLinearGradient(0, 630, 0, 100);
+            // Minimal gradient to preserve background slides
+            const gradient = ctx.createLinearGradient(0, 630, 0, 300);
 
             // Convert hex to rgba for transparency
             let transparentColor;
@@ -895,9 +895,9 @@
                 transparentColor = config.bg.replace(')', ', 0)').replace('rgb', 'rgba');
             }
 
-            // Lighter gradient to preserve background visibility
+            // Very light gradient just at bottom to avoid hiding background
             gradient.addColorStop(0, config.bg);           // Solid at bottom
-            gradient.addColorStop(0.6, transparentColor);  // Fade out more quickly to show background
+            gradient.addColorStop(0.5, transparentColor);  // Fade quickly
 
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, 1200, 630);  // Fill entire canvas
