@@ -878,15 +878,16 @@
                 ctx.closePath();
             }
 
-            // Draw shadow with reduced blur to prevent edge bleeding
-            // Blur = 94 (matches offset) prevents upward bleed while maintaining fade
+            // Draw manual gradient shadow below hero (no canvas shadow to prevent bleeding)
             ctx.save();
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-            ctx.shadowBlur = 94;  // Match offset to prevent upward bleeding
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 94;
-            roundRect(ctx, heroX, heroY, heroWidth, heroHeight, borderRadius);
-            ctx.fillStyle = '#000';
+            const shadowY = heroY + heroHeight;
+            const shadowHeight = 120;
+            const gradient = ctx.createLinearGradient(0, shadowY, 0, shadowY + shadowHeight);
+            gradient.addColorStop(0, 'rgba(0, 0, 0, 0.35)');
+            gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.15)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            roundRect(ctx, heroX + 10, shadowY, heroWidth - 20, shadowHeight, borderRadius);
             ctx.fill();
             ctx.restore();
 
@@ -895,15 +896,6 @@
             roundRect(ctx, heroX, heroY, heroWidth, heroHeight, borderRadius);
             ctx.clip();
             ctx.drawImage(heroSlide, heroX, heroY, heroWidth, heroHeight);
-            ctx.restore();
-
-            // Cover any shadow bleeding at top and left edges with background color
-            ctx.save();
-            ctx.fillStyle = config.bg;
-            // Thin strip at top edge
-            ctx.fillRect(heroX, heroY - 2, heroWidth, 3);
-            // Thin strip at left edge
-            ctx.fillRect(heroX - 2, heroY, 3, heroHeight);
             ctx.restore();
 
             // Restore clipping region
