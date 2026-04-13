@@ -878,15 +878,11 @@
                 ctx.closePath();
             }
 
-            // Draw shadow only below (clip to prevent bleeding to top/left)
+            // Draw shadow with reduced blur to prevent edge bleeding
+            // Blur = 94 (matches offset) prevents upward bleed while maintaining fade
             ctx.save();
-            ctx.beginPath();
-            // Clip region: start just inside left edge and below top edge
-            ctx.rect(heroX + 5, heroY + 10, heroWidth + 200, heroHeight + 200);
-            ctx.clip();
-
             ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-            ctx.shadowBlur = 100;
+            ctx.shadowBlur = 94;  // Match offset to prevent upward bleeding
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 94;
             roundRect(ctx, heroX, heroY, heroWidth, heroHeight, borderRadius);
