@@ -19,8 +19,11 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
                 '--disable-gpu',
                 '--disable-web-security',
                 '--disable-features=IsolateOrigins,site-per-process',
-                '--single-process',
-                '--no-sandbox'
+                '--no-sandbox',
+                // Memory optimizations
+                '--disable-software-rasterizer',
+                '--disable-extensions',
+                '--disable-setuid-sandbox'
             ],
             defaultViewport: chromium.defaultViewport,
             executablePath: await chromium.executablePath(),
@@ -98,6 +101,11 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
 
         await wait(300); // Small buffer after content check
 
+        // Check if page is still connected before attempting screenshot
+        if (page.isClosed()) {
+            throw new Error(`Page was closed unexpectedly at slide ${i}`);
+        }
+
         // Take screenshot with retry logic for blank slides
         let screenshot;
         let retryCount = 0;
@@ -105,6 +113,11 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
 
         while (retryCount <= maxRetries) {
             try {
+                // Double-check page/browser are still alive
+                if (page.isClosed() || !browser.isConnected()) {
+                    throw new Error('Browser or page session closed unexpectedly');
+                }
+
                 screenshot = await page.screenshot({
                     clip: SLIDE_CROP,
                     encoding: 'base64',
@@ -125,8 +138,16 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
 
                 break; // Screenshot successful
             } catch (screenshotError) {
+                console.error(`   ❌ Screenshot error at slide ${i}:`, screenshotError.message);
+
+                // If it's a Protocol error, the session is dead - can't recover
+                if (screenshotError.message.includes('Protocol error') ||
+                    screenshotError.message.includes('Session closed')) {
+                    throw new Error(`Browser session crashed at slide ${i}. Try capturing fewer slides or reduce viewport size.`);
+                }
+
                 if (retryCount < maxRetries) {
-                    console.log(`   ⚠️  Screenshot failed, retrying...`);
+                    console.log(`   ⚠️  Screenshot failed, retrying (attempt ${retryCount + 1}/${maxRetries})...`);
                     retryCount++;
                     await wait(1000);
                 } else {
@@ -146,8 +167,20 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
 
         console.log(`   ✅ Slide ${i}: ${brightness.toUpperCase()}`);
 
+        // Clear any page resources between slides to prevent memory buildup
+        try {
+            // Clear browser cache/cookies between slides to reduce memory
+            const client = await page.target().createCDPSession();
+            await client.send('Network.clearBrowserCache');
+            await client.send('Network.clearBrowserCookies');
+            await client.detach();
+        } catch (cleanupError) {
+            // Cleanup is best-effort, don't fail if it doesn't work
+            console.log(`   ⚠️  Cleanup warning: ${cleanupError.message}`);
+        }
+
         // Force garbage collection hint
-        if (global.gc && i % 3 === 0) {
+        if (global.gc) {
             global.gc();
         }
     }
