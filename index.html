@@ -878,8 +878,12 @@
                 ctx.closePath();
             }
 
-            // Draw large soft shadow (only downward, not around all edges)
+            // Draw shadow only below and to the right (clip to prevent bleeding to top/left)
             ctx.save();
+            ctx.beginPath();
+            ctx.rect(heroX - 10, heroY + 20, heroWidth + 200, heroHeight + 200);
+            ctx.clip();
+
             ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
             ctx.shadowBlur = 100;
             ctx.shadowOffsetX = 0;
