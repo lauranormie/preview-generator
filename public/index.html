@@ -882,11 +882,11 @@
             ctx.save();
             const shadowY = heroY + heroHeight;
             const shadowHeight = 120;
-            const gradient = ctx.createLinearGradient(0, shadowY, 0, shadowY + shadowHeight);
-            gradient.addColorStop(0, 'rgba(0, 0, 0, 0.35)');
-            gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.15)');
-            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-            ctx.fillStyle = gradient;
+            const shadowGradient = ctx.createLinearGradient(0, shadowY, 0, shadowY + shadowHeight);
+            shadowGradient.addColorStop(0, 'rgba(0, 0, 0, 0.35)');
+            shadowGradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.15)');
+            shadowGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = shadowGradient;
             roundRect(ctx, heroX + 10, shadowY, heroWidth - 20, shadowHeight, borderRadius);
             ctx.fill();
             ctx.restore();
