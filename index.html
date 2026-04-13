@@ -897,6 +897,15 @@
             ctx.drawImage(heroSlide, heroX, heroY, heroWidth, heroHeight);
             ctx.restore();
 
+            // Cover any shadow bleeding at top and left edges with background color
+            ctx.save();
+            ctx.fillStyle = config.bg;
+            // Thin strip at top edge
+            ctx.fillRect(heroX, heroY - 2, heroWidth, 3);
+            // Thin strip at left edge
+            ctx.fillRect(heroX - 2, heroY, 3, heroHeight);
+            ctx.restore();
+
             // Restore clipping region
             ctx.restore();
         }
