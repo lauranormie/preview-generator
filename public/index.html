@@ -891,16 +891,14 @@
                 ctx.closePath();
             }
 
-            // Draw manual gradient shadow below hero (no canvas shadow to prevent bleeding)
+            // Draw shadow with canvas shadowBlur
             ctx.save();
-            const shadowY = heroY + heroHeight;
-            const shadowHeight = 120;
-            const shadowGradient = ctx.createLinearGradient(0, shadowY, 0, shadowY + shadowHeight);
-            shadowGradient.addColorStop(0, 'rgba(0, 0, 0, 0.35)');
-            shadowGradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.15)');
-            shadowGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-            ctx.fillStyle = shadowGradient;
-            roundRect(ctx, heroX + 10, shadowY, heroWidth - 20, shadowHeight, borderRadius);
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+            ctx.shadowBlur = 100;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 94;
+            roundRect(ctx, heroX, heroY, heroWidth, heroHeight, borderRadius);
+            ctx.fillStyle = '#000';
             ctx.fill();
             ctx.restore();
 
