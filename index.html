@@ -780,9 +780,10 @@
             // Isometric_stack container -> Groups -> Frames -> Images
 
             // Parent container: Isometric_stack
+            // Adjusted position to center pattern on 1200x630 canvas
             const isometricStack = {
-                x: -1449,
-                y: -360,
+                x: -600,
+                y: -100,
                 rotation: 2.45
             };
 
@@ -826,15 +827,17 @@
             ctx.rotate((isometricStack.rotation * Math.PI) / 180);
 
             // Draw groups multiple times to fill entire canvas
-            // Spread repetitions widely to cover all edges (top, bottom, left, right)
+            // Adjusted offsets for better coverage on 1200x630 canvas
             const groupRepetitions = [
                 { offsetX: 0, offsetY: 0 },        // Center
-                { offsetX: 2700, offsetY: 0 },     // Right
-                { offsetX: -2700, offsetY: 0 },    // Left
-                { offsetX: 0, offsetY: 1200 },     // Bottom
-                { offsetX: 0, offsetY: -1200 },    // Top
-                { offsetX: 2700, offsetY: -1200 }, // Top-right
-                { offsetX: -2700, offsetY: -1200 } // Top-left
+                { offsetX: 1800, offsetY: 0 },     // Right
+                { offsetX: -1800, offsetY: 0 },    // Left
+                { offsetX: 0, offsetY: 800 },      // Bottom
+                { offsetX: 0, offsetY: -800 },     // Top
+                { offsetX: 1800, offsetY: -800 },  // Top-right
+                { offsetX: -1800, offsetY: -800 }, // Top-left
+                { offsetX: 1800, offsetY: 800 },   // Bottom-right
+                { offsetX: -1800, offsetY: 800 }   // Bottom-left
             ];
 
             for (let repIdx = 0; repIdx < groupRepetitions.length; repIdx++) {
@@ -873,7 +876,7 @@
                             0
                         );
 
-                        ctx.globalAlpha = 0.65;  // Visible but subtle background
+                        ctx.globalAlpha = 0.7;  // Visible background
                         ctx.imageSmoothingEnabled = true;
                         ctx.imageSmoothingQuality = 'high';
 
