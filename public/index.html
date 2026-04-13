@@ -771,85 +771,94 @@
             ctx.rect(0, 0, 1200, 630);
             ctx.clip();
 
-            // Diagonal perspective repeating grid layout (exact Figma measurements)
-            // From Figma: tile spacing is ~27px, not 90px
+            // Exact Figma structure: 3 Groups with specific positioning
             const tileWidth = 276;
             const tileHeight = 155;
-            const tileGapX = 27;  // Horizontal gap between tiles
-            const tileGapY = 27;  // Vertical gap between tiles
-            const outerRotation = 2.45;
-            const innerRotation = 8.45;
-            const skewX = -28.33;
-            const scaleY = 0.88;
+            const outerRotation = -19.94; // Exact from Figma
 
-            // Figma positions: background starts at -1449px, -350px
-            // Group offsets from Figma
-            const groupOffsets = [
-                { x: 0, y: 0 },                    // Group 1
-                { x: 896.57, y: 137.93 },          // Group 2
-                { x: 1795.79, y: 275.87 }          // Group 3
+            // Transform matrix from Figma: matrix(0.98, 0.19, -0.63, 0.77, 0, 0)
+            const transformMatrix = {
+                a: 0.98,
+                b: 0.19,
+                c: -0.63,
+                d: 0.77
+            };
+
+            // Three groups with exact Figma positions (adjusted for 1200x630 canvas)
+            // Figma coordinates translated to center around hero
+            const groups = [
+                { x: -800, y: -250 },      // Group 1 (shifted left and up to spread behind)
+                { x: 90, y: -74 },         // Group 2 (close to center)
+                { x: 982, y: 102 }         // Group 3 (spread right)
             ];
 
-            // Inner group positions (where tiles actually start)
-            const innerOffsets = [
-                { x: 133.34, y: 294.79 },
-                { x: 1029.9, y: 432.73 },
-                { x: 1929.12, y: 570.66 }
+            // Individual slide positions within each Frame (from Figma)
+            // These are relative to the Frame, arranged in isometric grid
+            const slidePositions = [
+                { x: 171.68, y: -329.6 },   // Top row
+                { x: 468.9, y: -272.34 },
+                { x: 766.31, y: -215.08 },
+                { x: -42.72, y: -55.92 },   // Second row
+                { x: 254.27, y: 1.34 },
+                { x: 552.13, y: 58.6 },
+                { x: 663.13, y: -77.85 },   // Third row
+                { x: 143.54, y: 137.78 },
+                { x: 366.13, y: -135.11 },  // Fourth row
+                { x: 68.24, y: -192.37 }
             ];
 
-            ctx.save();
-            // Center the pattern and spread it wider to create radiating effect
-            ctx.translate(600, 315);
-            ctx.rotate((outerRotation * Math.PI) / 180);
+            // Draw background groups
+            for (let groupIdx = 0; groupIdx < groups.length * 2; groupIdx++) {
+                const group = groups[groupIdx % groups.length];
+                const extraOffset = Math.floor(groupIdx / groups.length);
 
-            // Calculate group dimensions
-            const groupWidth = (tileWidth + tileGapX) * 3;
-            const groupHeight = (tileHeight + tileGapY) * 3;
+                ctx.save();
 
-            // Draw groups in a wider spread pattern for radiating effect
-            for (let row = -2; row < 4; row++) {
-                for (let col = -3; col < 5; col++) {
+                // Position and rotate the outer group
+                ctx.translate(
+                    group.x + (extraOffset * 1800),
+                    group.y + (extraOffset * 350)
+                );
+                ctx.rotate((outerRotation * Math.PI) / 180);
+
+                // Offset for the inner Frame
+                ctx.translate(119.4, 264);
+
+                // Apply the transform matrix
+                ctx.transform(
+                    transformMatrix.a,
+                    transformMatrix.b,
+                    transformMatrix.c,
+                    transformMatrix.d,
+                    0,
+                    0
+                );
+
+                // Draw each slide in the group
+                let slideIdx = groupIdx * 3;
+                for (let i = 0; i < slidePositions.length; i++) {
+                    if (slideIdx >= balancedSlides.length) slideIdx = 0;
+
+                    const pos = slidePositions[i];
+
                     ctx.save();
+                    ctx.globalAlpha = 0.65;  // Visible but not overwhelming
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
 
-                    // Spread groups wider for more visible radiating effect
-                    const offsetX = col * groupWidth * 1.0;  // Wider horizontal spread
-                    const offsetY = row * groupHeight * 0.7;  // More vertical spread
-                    ctx.translate(offsetX, offsetY);
-
-                    // Apply inner transformations
-                    ctx.rotate((innerRotation * Math.PI) / 180);
-                    ctx.scale(1, scaleY);
-                    ctx.transform(1, 0, Math.tan((skewX * Math.PI) / 180), 1, 0, 0);
-
-                    // Create 3x3 grid of slides
-                    let slideIdx = ((row + 3) * 8 + (col + 3)) % balancedSlides.length;
-                    for (let tileRow = 0; tileRow < 3; tileRow++) {
-                        for (let tileCol = 0; tileCol < 3; tileCol++) {
-                            if (slideIdx >= balancedSlides.length) slideIdx = 0;
-
-                            const x = tileCol * (tileWidth + tileGapX);
-                            const y = tileRow * (tileHeight + tileGapY);
-
-                            ctx.save();
-                            ctx.globalAlpha = 0.7;  // Much more visible like Figma
-                            ctx.imageSmoothingEnabled = true;
-                            ctx.imageSmoothingQuality = 'high';
-
-                            ctx.drawImage(
-                                balancedSlides[slideIdx].img,
-                                x,
-                                y,
-                                tileWidth,
-                                tileHeight
-                            );
-
-                            ctx.restore();
-                            slideIdx++;
-                        }
-                    }
+                    ctx.drawImage(
+                        balancedSlides[slideIdx].img,
+                        pos.x,
+                        pos.y,
+                        tileWidth,
+                        tileHeight
+                    );
 
                     ctx.restore();
+                    slideIdx = (slideIdx + 1) % balancedSlides.length;
                 }
+
+                ctx.restore();
             }
 
             ctx.restore();
