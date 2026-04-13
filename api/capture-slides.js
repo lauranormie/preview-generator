@@ -19,11 +19,8 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
                 '--disable-gpu',
                 '--disable-web-security',
                 '--disable-features=IsolateOrigins,site-per-process',
-                '--no-sandbox',
-                // Memory optimizations
-                '--disable-software-rasterizer',
-                '--disable-extensions',
-                '--disable-setuid-sandbox'
+                '--single-process',
+                '--no-sandbox'
             ],
             defaultViewport: chromium.defaultViewport,
             executablePath: await chromium.executablePath(),
@@ -167,20 +164,8 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
 
         console.log(`   ✅ Slide ${i}: ${brightness.toUpperCase()}`);
 
-        // Clear any page resources between slides to prevent memory buildup
-        try {
-            // Clear browser cache/cookies between slides to reduce memory
-            const client = await page.target().createCDPSession();
-            await client.send('Network.clearBrowserCache');
-            await client.send('Network.clearBrowserCookies');
-            await client.detach();
-        } catch (cleanupError) {
-            // Cleanup is best-effort, don't fail if it doesn't work
-            console.log(`   ⚠️  Cleanup warning: ${cleanupError.message}`);
-        }
-
         // Force garbage collection hint
-        if (global.gc) {
+        if (global.gc && i % 3 === 0) {
             global.gc();
         }
     }
