@@ -946,11 +946,13 @@
             // Restore clipping region
             ctx.restore();
 
-            // Draw clean border to cover any anti-aliasing artifacts on edges
+            // Draw solid rectangles to completely cover dark edges
             ctx.save();
-            ctx.strokeStyle = config.bg;
-            ctx.lineWidth = 2;
-            ctx.strokeRect(0, 0, 1200, 630);
+            ctx.fillStyle = config.bg;
+            // Top edge
+            ctx.fillRect(0, 0, 1200, 3);
+            // Left edge
+            ctx.fillRect(0, 0, 3, 630);
             ctx.restore();
         }
 
