@@ -891,12 +891,12 @@
                 ctx.closePath();
             }
 
-            // Draw shadow with canvas shadowBlur
+            // Draw shadow with smaller blur to prevent edge bleeding
             ctx.save();
             ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-            ctx.shadowBlur = 100;
+            ctx.shadowBlur = 50;   // Smaller blur prevents bleeding
             ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 94;
+            ctx.shadowOffsetY = 50; // Match blur to prevent upward bleed
             roundRect(ctx, heroX, heroY, heroWidth, heroHeight, borderRadius);
             ctx.fillStyle = '#000';
             ctx.fill();
