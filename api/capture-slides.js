@@ -45,11 +45,11 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
     page.setDefaultTimeout(30000);
 
     console.log('📂 Loading template:', templateUrl);
-    await page.goto(templateUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+    await page.goto(templateUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
     console.log('⏳ Waiting for page to be ready...');
-    // Wait for everything to fully load
-    await wait(3000);
+    // Simple fixed wait - more reliable than complex checks
+    await wait(8000);
 
     console.log('✅ Page loaded, detecting slide count...');
     const slideCount = await page.evaluate(() => {
@@ -83,8 +83,31 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
             }
         }, i);
 
-        // Simple wait for slide transition - more reliable than iframe checks
-        await wait(2500);
+        await wait(1500); // Wait for slide transition and rendering
+
+        // For single slide retry, use simple wait to avoid detached frame errors
+        // For full capture, check iframe content for better reliability
+        if (!singleSlideNumber) {
+            await page.waitForFunction(
+                () => {
+                    const iframe = document.querySelector('iframe');
+                    if (!iframe) return false;
+                    try {
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        const body = iframeDoc.body;
+                        return body && body.innerHTML.length > 100;
+                    } catch (e) {
+                        return false;
+                    }
+                },
+                { timeout: 5000 }
+            ).catch(() => console.log(`   ⚠️  Slide ${i} content check timed out, capturing anyway`));
+        } else {
+            // For retry, just use simple wait to avoid detached frame issues
+            await wait(1500);
+        }
+
+        await wait(300); // Small buffer after content check
 
         // Check if page is still connected before attempting screenshot
         if (page.isClosed()) {
