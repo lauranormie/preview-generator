@@ -83,7 +83,13 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
             }
         }, i);
 
-        // Simple wait for slide transition - avoids detached frame errors
+        // Wait for slide transition
+        await wait(1500);
+
+        // Wait for iframe to exist and be stable (without accessing its content)
+        await page.waitForSelector('iframe', { timeout: 10000 });
+
+        // Additional wait to ensure iframe content is fully loaded and stable
         await wait(2000);
 
         // Check if page is still connected before attempting screenshot
