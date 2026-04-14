@@ -258,15 +258,41 @@ module.exports = async (req, res) => {
             console.log('   URL:', templateUrl);
             console.log('');
 
-            // First, get total slide count
+            // First, get total slide count using same config as captureSlides
             const browser = await puppeteer.launch({
-                args: chromium.args,
+                args: [
+                    ...chromium.args,
+                    '--disable-dev-shm-usage',
+                    '--no-first-run',
+                    '--no-zygote',
+                    '--disable-gpu',
+                    '--disable-web-security',
+                    '--disable-features=IsolateOrigins,site-per-process',
+                    '--single-process',
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-accelerated-2d-canvas',
+                    '--disable-background-networking',
+                    '--disable-default-apps',
+                    '--disable-extensions',
+                    '--disable-sync',
+                    '--disable-translate',
+                    '--hide-scrollbars',
+                    '--metrics-recording-only',
+                    '--mute-audio',
+                    '--no-default-browser-check',
+                    '--safebrowsing-disable-auto-update',
+                    '--js-flags=--max-old-space-size=512'
+                ],
                 defaultViewport: chromium.defaultViewport,
                 executablePath: await chromium.executablePath(),
                 headless: chromium.headless,
+                ignoreHTTPSErrors: true,
             });
 
             const page = await browser.newPage();
+            await page.setViewport({ width: 1200, height: 750 });
+
             await page.goto(templateUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
             await wait(3000);
 
