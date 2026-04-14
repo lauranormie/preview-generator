@@ -10,11 +10,6 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
     let browser = null;
 
     try {
-        // Small delay to ensure any previous browser instances are fully closed
-        if (singleSlideNumber) {
-            await wait(1000);
-        }
-
         browser = await puppeteer.launch({
             args: [
                 ...chromium.args,
@@ -38,8 +33,8 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
     // Set user agent to look like a real browser
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-    // Balanced viewport for memory and quality
-    await page.setViewport({ width: 1200, height: 750 });
+    // Reduced viewport to prevent crashes
+    await page.setViewport({ width: 960, height: 600, deviceScaleFactor: 1 });
 
     // Set timeout for operations
     page.setDefaultTimeout(30000);
@@ -48,8 +43,8 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
     await page.goto(templateUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
     console.log('⏳ Waiting for page to be ready...');
-    // Simple fixed wait - more reliable than complex checks
-    await wait(8000);
+    // Wait for page to fully load
+    await wait(5000);
 
     console.log('✅ Page loaded, detecting slide count...');
     const slideCount = await page.evaluate(() => {
@@ -69,8 +64,8 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
 
     // Capture slides
     const slides = [];
-    // Coordinates for 1200x750 viewport
-    const SLIDE_CROP = { x: 88, y: 20, width: 1025, height: 577 };
+    // Coordinates for 960x600 viewport
+    const SLIDE_CROP = { x: 70, y: 16, width: 820, height: 462 };
 
     for (let i = startSlide; i <= endSlide; i++) {
         console.log(`📸 Capturing slide ${i}/${slideCount}...`);
@@ -83,14 +78,8 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
             }
         }, i);
 
-        // Wait for slide transition
-        await wait(1500);
-
-        // Wait for iframe to exist and be stable (without accessing its content)
-        await page.waitForSelector('iframe', { timeout: 10000 });
-
-        // Additional wait to ensure iframe content is fully loaded and stable
-        await wait(2000);
+        // Simple wait for slide transition and content load
+        await wait(3000);
 
         // Check if page is still connected before attempting screenshot
         if (page.isClosed()) {
@@ -113,7 +102,7 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
                     clip: SLIDE_CROP,
                     encoding: 'base64',
                     type: 'jpeg',
-                    quality: 90
+                    quality: 80  // Reduced quality to save memory
                 });
 
                 // Check if screenshot is suspiciously small (likely blank)
@@ -183,8 +172,6 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
             try {
                 await browser.close();
                 console.log('🧹 Browser closed');
-                // Extra delay after close to ensure cleanup completes
-                await wait(500);
             } catch (closeError) {
                 console.error('Warning: Error closing browser:', closeError);
             }
