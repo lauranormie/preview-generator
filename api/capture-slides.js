@@ -20,7 +20,20 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
                 '--disable-web-security',
                 '--disable-features=IsolateOrigins,site-per-process',
                 '--single-process',
-                '--no-sandbox'
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-accelerated-2d-canvas',
+                '--disable-background-networking',
+                '--disable-default-apps',
+                '--disable-extensions',
+                '--disable-sync',
+                '--disable-translate',
+                '--hide-scrollbars',
+                '--metrics-recording-only',
+                '--mute-audio',
+                '--no-default-browser-check',
+                '--safebrowsing-disable-auto-update',
+                '--js-flags=--max-old-space-size=512'  // Limit memory to 512MB
             ],
             defaultViewport: chromium.defaultViewport,
             executablePath: await chromium.executablePath(),
@@ -40,19 +53,36 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
     page.setDefaultTimeout(30000);
 
     console.log('📂 Loading template:', templateUrl);
-    await page.goto(templateUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+
+    try {
+        await page.goto(templateUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    } catch (gotoError) {
+        console.error('Failed to load template:', gotoError.message);
+        throw new Error('Failed to load template URL. Please check the URL is correct and accessible.');
+    }
 
     console.log('⏳ Waiting for page to be ready...');
     // Wait for page to fully load
-    await wait(5000);
+    await wait(4000);
 
     console.log('✅ Page loaded, detecting slide count...');
-    const slideCount = await page.evaluate(() => {
-        const buttons = document.querySelectorAll('button[type="button"]');
-        return buttons.length;
-    });
+
+    let slideCount;
+    try {
+        slideCount = await page.evaluate(() => {
+            const buttons = document.querySelectorAll('button[type="button"]');
+            return buttons.length;
+        });
+    } catch (evalError) {
+        console.error('Failed to detect slide count:', evalError.message);
+        throw new Error('Failed to load template. The page may have crashed or is inaccessible.');
+    }
 
     console.log(`   Found ${slideCount} slides`);
+
+    if (slideCount === 0) {
+        throw new Error('No slides found in template. Please check the URL.');
+    }
 
     // Determine which slides to capture
     const startSlide = singleSlideNumber || 1;
@@ -70,13 +100,23 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
     for (let i = startSlide; i <= endSlide; i++) {
         console.log(`📸 Capturing slide ${i}/${slideCount}...`);
 
+        // Check browser health before each slide
+        if (!browser.isConnected()) {
+            throw new Error(`Browser disconnected at slide ${i}. Try reducing template size or number of slides.`);
+        }
+
         // Navigate to slide
-        await page.evaluate((slideNum) => {
-            const buttons = document.querySelectorAll('button[type="button"]');
-            if (buttons[slideNum - 1]) {
-                buttons[slideNum - 1].click();
-            }
-        }, i);
+        try {
+            await page.evaluate((slideNum) => {
+                const buttons = document.querySelectorAll('button[type="button"]');
+                if (buttons[slideNum - 1]) {
+                    buttons[slideNum - 1].click();
+                }
+            }, i);
+        } catch (navError) {
+            console.error(`Navigation error at slide ${i}:`, navError.message);
+            throw new Error(`Failed to navigate to slide ${i}. Browser may have crashed.`);
+        }
 
         // Simple wait for slide transition and content load
         await wait(3000);
@@ -163,6 +203,10 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
         // Provide helpful message for common errors
         if (error.message.includes('ETXTBSY')) {
             throw new Error('Chrome executable is busy. Please wait a few seconds and try again.');
+        }
+
+        if (error.message.includes('Target closed') || error.message.includes('Session closed')) {
+            throw new Error('Browser crashed due to memory limits. Template may be too complex. Try a template with fewer slides or simpler content.');
         }
 
         throw error;
