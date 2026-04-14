@@ -244,17 +244,73 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'Template URL is required' });
         }
 
+        let slides;
+
         if (singleSlide) {
+            // Single slide retry - no batching needed
             console.log(`\n🔄 Retrying single slide ${singleSlide}...`);
             console.log('   URL:', templateUrl);
             console.log('');
+            slides = await captureSlides(templateUrl, singleSlide);
         } else {
-            console.log('\n🎬 Stage 1: Capturing slides...');
+            // Batch processing for full capture
+            console.log('\n🎬 Stage 1: Capturing slides in batches...');
             console.log('   URL:', templateUrl);
             console.log('');
-        }
 
-        const slides = await captureSlides(templateUrl, singleSlide);
+            // First, get total slide count
+            const browser = await puppeteer.launch({
+                args: chromium.args,
+                defaultViewport: chromium.defaultViewport,
+                executablePath: await chromium.executablePath(),
+                headless: chromium.headless,
+            });
+
+            const page = await browser.newPage();
+            await page.goto(templateUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+            await wait(3000);
+
+            const totalSlides = await page.evaluate(() => {
+                const buttons = document.querySelectorAll('button[type="button"]');
+                return buttons.length;
+            });
+
+            await browser.close();
+
+            console.log(`   Found ${totalSlides} slides total`);
+            console.log(`   Processing in batches of 3 slides...\n`);
+
+            // Split into batches of 3
+            const BATCH_SIZE = 3;
+            const allSlides = [];
+
+            for (let batchStart = 1; batchStart <= totalSlides; batchStart += BATCH_SIZE) {
+                const batchEnd = Math.min(batchStart + BATCH_SIZE - 1, totalSlides);
+                const batchNum = Math.floor((batchStart - 1) / BATCH_SIZE) + 1;
+                const totalBatches = Math.ceil(totalSlides / BATCH_SIZE);
+
+                console.log(`\n📦 Batch ${batchNum}/${totalBatches}: Slides ${batchStart}-${batchEnd}`);
+
+                // Capture this batch
+                const batchSlides = [];
+                for (let slideNum = batchStart; slideNum <= batchEnd; slideNum++) {
+                    const slideData = await captureSlides(templateUrl, slideNum);
+                    batchSlides.push(...slideData);
+                    console.log(`   ✅ Slide ${slideNum} captured`);
+                }
+
+                allSlides.push(...batchSlides);
+
+                // Small delay between batches to let memory settle
+                if (batchEnd < totalSlides) {
+                    console.log(`   ⏳ Cooling down before next batch...`);
+                    await wait(2000);
+                }
+            }
+
+            slides = allSlides;
+            console.log(`\n✅ All ${totalSlides} slides captured across ${Math.ceil(totalSlides / BATCH_SIZE)} batches`);
+        }
 
         const lightCount = slides.filter(s => s.brightness === 'light').length;
         const darkCount = slides.filter(s => s.brightness === 'dark').length;
