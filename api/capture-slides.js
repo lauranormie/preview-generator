@@ -46,8 +46,8 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
     // Set user agent to look like a real browser
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-    // Reduced viewport to prevent crashes
-    await page.setViewport({ width: 960, height: 600, deviceScaleFactor: 1 });
+    // Balanced viewport for memory and quality
+    await page.setViewport({ width: 1200, height: 750 });
 
     // Set timeout for operations
     page.setDefaultTimeout(30000);
@@ -94,8 +94,8 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
 
     // Capture slides
     const slides = [];
-    // Coordinates for 960x600 viewport
-    const SLIDE_CROP = { x: 70, y: 16, width: 820, height: 462 };
+    // Coordinates for 1200x750 viewport
+    const SLIDE_CROP = { x: 88, y: 20, width: 1025, height: 577 };
 
     for (let i = startSlide; i <= endSlide; i++) {
         console.log(`📸 Capturing slide ${i}/${slideCount}...`);
@@ -142,7 +142,7 @@ async function captureSlides(templateUrl, singleSlideNumber = null) {
                     clip: SLIDE_CROP,
                     encoding: 'base64',
                     type: 'jpeg',
-                    quality: 80  // Reduced quality to save memory
+                    quality: 90
                 });
 
                 // Check if screenshot is suspiciously small (likely blank)
