@@ -258,8 +258,12 @@ module.exports = async (req, res) => {
             console.log('   URL:', templateUrl);
             console.log('');
 
-            // First, get total slide count using same config as captureSlides
-            const browser = await puppeteer.launch({
+            let totalSlides;
+            let countBrowser;
+
+            try {
+                // First, get total slide count using same config as captureSlides
+                countBrowser = await puppeteer.launch({
                 args: [
                     ...chromium.args,
                     '--disable-dev-shm-usage',
@@ -290,18 +294,29 @@ module.exports = async (req, res) => {
                 ignoreHTTPSErrors: true,
             });
 
-            const page = await browser.newPage();
-            await page.setViewport({ width: 1200, height: 750 });
+                const countPage = await countBrowser.newPage();
+                await countPage.setViewport({ width: 1200, height: 750 });
 
-            await page.goto(templateUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
-            await wait(3000);
+                await countPage.goto(templateUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+                await wait(3000);
 
-            const totalSlides = await page.evaluate(() => {
-                const buttons = document.querySelectorAll('button[type="button"]');
-                return buttons.length;
-            });
+                totalSlides = await countPage.evaluate(() => {
+                    const buttons = document.querySelectorAll('button[type="button"]');
+                    return buttons.length;
+                });
 
-            await browser.close();
+                await countBrowser.close();
+            } catch (countError) {
+                console.error('Failed to count slides:', countError.message);
+                if (countBrowser) {
+                    try {
+                        await countBrowser.close();
+                    } catch (closeErr) {
+                        // Ignore close errors
+                    }
+                }
+                throw new Error('Failed to detect slides in template. The page may have crashed or timed out.');
+            }
 
             console.log(`   Found ${totalSlides} slides total`);
             console.log(`   Processing in batches of 3 slides...\n`);
@@ -310,28 +325,33 @@ module.exports = async (req, res) => {
             const BATCH_SIZE = 3;
             const allSlides = [];
 
-            for (let batchStart = 1; batchStart <= totalSlides; batchStart += BATCH_SIZE) {
-                const batchEnd = Math.min(batchStart + BATCH_SIZE - 1, totalSlides);
-                const batchNum = Math.floor((batchStart - 1) / BATCH_SIZE) + 1;
-                const totalBatches = Math.ceil(totalSlides / BATCH_SIZE);
+            try {
+                for (let batchStart = 1; batchStart <= totalSlides; batchStart += BATCH_SIZE) {
+                    const batchEnd = Math.min(batchStart + BATCH_SIZE - 1, totalSlides);
+                    const batchNum = Math.floor((batchStart - 1) / BATCH_SIZE) + 1;
+                    const totalBatches = Math.ceil(totalSlides / BATCH_SIZE);
 
-                console.log(`\n📦 Batch ${batchNum}/${totalBatches}: Slides ${batchStart}-${batchEnd}`);
+                    console.log(`\n📦 Batch ${batchNum}/${totalBatches}: Slides ${batchStart}-${batchEnd}`);
 
-                // Capture this batch
-                const batchSlides = [];
-                for (let slideNum = batchStart; slideNum <= batchEnd; slideNum++) {
-                    const slideData = await captureSlides(templateUrl, slideNum);
-                    batchSlides.push(...slideData);
-                    console.log(`   ✅ Slide ${slideNum} captured`);
+                    // Capture this batch
+                    const batchSlides = [];
+                    for (let slideNum = batchStart; slideNum <= batchEnd; slideNum++) {
+                        const slideData = await captureSlides(templateUrl, slideNum);
+                        batchSlides.push(...slideData);
+                        console.log(`   ✅ Slide ${slideNum} captured`);
+                    }
+
+                    allSlides.push(...batchSlides);
+
+                    // Small delay between batches to let memory settle
+                    if (batchEnd < totalSlides) {
+                        console.log(`   ⏳ Cooling down before next batch...`);
+                        await wait(2000);
+                    }
                 }
-
-                allSlides.push(...batchSlides);
-
-                // Small delay between batches to let memory settle
-                if (batchEnd < totalSlides) {
-                    console.log(`   ⏳ Cooling down before next batch...`);
-                    await wait(2000);
-                }
+            } catch (batchError) {
+                console.error('Error during batch capture:', batchError.message);
+                throw new Error(`Failed to capture slides: ${batchError.message}`);
             }
 
             slides = allSlides;
